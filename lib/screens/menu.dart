@@ -18,8 +18,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   static const List<Widget> _widgetOptions = <Widget>[
     HomePage(),
-    DashboardPage(),
     VenuesPage(),
+    DashboardPage(),
     SignOutPlaceholder(),
   ];
 
@@ -77,11 +77,11 @@ class _MyHomePageState extends State<MyHomePage> {
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(icon: Icon(Icons.business), label: 'Venue'),
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
             label: 'Dashboard',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.business), label: 'Venue'),
           BottomNavigationBarItem(icon: Icon(Icons.logout), label: 'Sign out'),
         ],
         currentIndex: _selectedIndex,
