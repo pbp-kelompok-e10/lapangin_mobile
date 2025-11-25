@@ -52,8 +52,19 @@ Memastikan aplikasi berfungsi dengan baik, selalu diperbarui, dan tetap aman dig
 
 -----
 
+## Alur pengintegrasian dengan web service untuk terhubung dengan aplikasi web yang sudah dibuat saat Proyek Tengah Semester
 
----
+1. Authentication
+User input -> flutter -> django API -> success -> accese granted/deleted and session created/deleted
+
+2. Create Data
+User input -> flutter -> django API -> save to database -> response back -> UI update
+
+3. Get Data
+Flutter request -> django API -> get from database -> response back -> UI update
+
+
+----- 
 
 ## Tautan deplomen PWS dan Link design
 
