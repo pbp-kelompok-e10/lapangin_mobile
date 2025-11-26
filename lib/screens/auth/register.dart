@@ -12,110 +12,182 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  final _fullNameController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
     final request = context.watch<CookieRequest>();
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    InputDecoration _getInputDecoration({
+      required String labelText,
+      required String hintText,
+      required IconData prefixIcon,
+      IconData? suffixIcon,
+      VoidCallback? suffixOnPressed,
+      bool isPassword = false,
+      bool isVisible = false,
+    }) {
+      const Color primaryColor = Color(0xFF0062FF);
+      const Color lightGrayColor = Color(0xFFE5E5E5);
+
+      return InputDecoration(
+        labelText: labelText,
+        labelStyle: const TextStyle(
+          color: lightGrayColor,
+          fontFamily: "Poppins",
         ),
-      ),
+        floatingLabelStyle: const TextStyle(
+          color: primaryColor,
+          fontFamily: "Poppins",
+        ),
+        hintStyle: const TextStyle(
+          color: lightGrayColor,
+          fontFamily: "Poppins",
+        ),
+        hintText: hintText,
+        prefixIcon: Icon(prefixIcon, color: lightGrayColor),
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  isVisible ? Icons.visibility : Icons.visibility_off,
+                  color: lightGrayColor,
+                ),
+                onPressed: suffixOnPressed,
+              )
+            : null,
+        enabledBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: lightGrayColor, width: 1.0),
+          borderRadius: BorderRadius.all(Radius.circular(8.0)),
+        ),
+        focusedBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: primaryColor, width: 1.0),
+          borderRadius: BorderRadius.all(Radius.circular(8.0)),
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.white,
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Card(
-            elevation: 8,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const Text(
-                    'Register',
-                    style: TextStyle(
-                      fontSize: 24.0,
-                      fontWeight: FontWeight.bold,
-                    ),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                SizedBox(height: screenHeight * 0.1),
+
+                // DAFTAR
+                const Text(
+                  'Daftar',
+                  style: TextStyle(
+                    fontSize: 32.0,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                    fontFamily: "Poppins",
                   ),
-                  const SizedBox(height: 30.0),
-                  TextFormField(
-                    controller: _usernameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Username',
-                      hintText: 'Enter your username',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12.0)),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12.0,
-                        vertical: 8.0,
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your username';
-                      }
-                      return null;
+                ),
+                const SizedBox(height: 36.0),
+
+                // --- Input Nama Lengkap (Sesuai Gambar) ---
+                TextFormField(
+                  controller: _fullNameController,
+                  decoration: _getInputDecoration(
+                    labelText: 'Nama Lengkap',
+                    hintText: 'Masukkan Nama Lengkap',
+                    prefixIcon: Icons.person_outline,
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Nama lengkap tidak boleh kosong!';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12.0),
+
+                // --- Input Username ---
+                TextFormField(
+                  controller: _usernameController,
+                  decoration: _getInputDecoration(
+                    labelText: 'Buat Username',
+                    hintText: 'Masukkan username Anda',
+                    prefixIcon: Icons.person_outline,
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Username tidak boleh kosong!';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12.0),
+
+                // --- Input Kata Sandi ---
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: !_isPasswordVisible,
+                  decoration: _getInputDecoration(
+                    labelText: 'Buat Kata Sandi',
+                    hintText: 'Masukkan kata sandi Anda',
+                    prefixIcon: Icons.key_outlined,
+                    isPassword: true,
+                    isVisible: _isPasswordVisible,
+                    suffixOnPressed: () {
+                      setState(() {
+                        _isPasswordVisible = !_isPasswordVisible;
+                      });
                     },
                   ),
-                  const SizedBox(height: 12.0),
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      hintText: 'Enter your password',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12.0)),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12.0,
-                        vertical: 8.0,
-                      ),
-                    ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      }
-                      return null;
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Kata sandi tidak boleh kosong!';
+                    } else if (value.length < 8) {
+                      return 'Kata sandi minimal 8 karakter!';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12.0),
+
+                // --- Input Konfirmasi Kata Sandi
+                TextFormField(
+                  controller: _confirmPasswordController,
+                  obscureText: !_isConfirmPasswordVisible,
+                  decoration: _getInputDecoration(
+                    labelText: 'Konfirmasi Kata Sandi',
+                    hintText: 'Konfirmasi kata sandi Anda',
+                    prefixIcon: Icons.key_outlined,
+                    isPassword: true,
+                    isVisible: _isConfirmPasswordVisible,
+                    suffixOnPressed: () {
+                      setState(() {
+                        _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                      });
                     },
                   ),
-                  const SizedBox(height: 12.0),
-                  TextFormField(
-                    controller: _confirmPasswordController,
-                    decoration: const InputDecoration(
-                      labelText: 'Confirm Password',
-                      hintText: 'Confirm your password',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12.0)),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12.0,
-                        vertical: 8.0,
-                      ),
-                    ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please confirm your password';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24.0),
-                  ElevatedButton(
-                    onPressed: () async {
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Konfirmasi kata sandi tidak boleh kosong!';
+                    } else if (value != _passwordController.text) {
+                      return 'Konfirmasi kata sandi tidak cocok!';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 36.0),
+                // --- Tombol DAFTAR ---
+                ElevatedButton(
+                  onPressed: () async {
+                    if (_formKey.currentState!.validate()) {
                       String username = _usernameController.text;
                       String password1 = _passwordController.text;
                       String password2 = _confirmPasswordController.text;
@@ -128,11 +200,14 @@ class _RegisterPageState extends State<RegisterPage> {
                           "password2": password2,
                         }),
                       );
+
                       if (context.mounted) {
                         if (response['status'] == 'success') {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Successfully registered!'),
+                              content: Text(
+                                'Registrasi berhasil! Silahkan Masuk.',
+                              ),
                             ),
                           );
                           Navigator.pushReplacement(
@@ -143,23 +218,87 @@ class _RegisterPageState extends State<RegisterPage> {
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Failed to register!'),
+                            SnackBar(
+                              content: Text(
+                                response['message'] ?? 'Gagal mendaftar!',
+                                style: const TextStyle(fontFamily: "Poppins"),
+                              ),
                             ),
                           );
                         }
                       }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      minimumSize: Size(double.infinity, 50),
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
                     ),
-                    child: const Text('Register'),
+                    padding: const EdgeInsets.symmetric(vertical: 14.0),
+                    elevation: 5,
                   ),
-                ],
-              ),
+                  child: const Text(
+                    'Daftar',
+                    style: TextStyle(
+                      fontSize: 18.0,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: "Poppins",
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 36.0),
+
+                const Row(
+                  children: [
+                    Expanded(child: Divider(thickness: 1, color: Colors.grey)),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10.0),
+                      child: Text(
+                        'Atau',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontFamily: "Poppins",
+                        ),
+                      ),
+                    ),
+                    Expanded(child: Divider(thickness: 1, color: Colors.grey)),
+                  ],
+                ),
+                const SizedBox(height: 36.0),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Sudah punya Akun?',
+                      style: TextStyle(fontSize: 16.0, fontFamily: "Poppins"),
+                    ),
+                    const SizedBox(width: 4.0),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginPage(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Masuk',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: "Poppins",
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 30.0),
+              ],
             ),
           ),
         ),
