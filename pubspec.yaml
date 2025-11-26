@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   provider: ^6.1.5+1
   pbp_django_auth: ^0.4.0
+  flutter_native_splash: ^2.3.1
 
 dev_dependencies:
   flutter_test:
@@ -59,6 +60,19 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/poppins/Poppins-Regular.ttf
+          weight: 400 # Regular
+        - asset: assets/fonts/poppins/Poppins-Medium.ttf
+          weight: 500 # Medium
+        - asset: assets/fonts/poppins/Poppins-Bold.ttf
+          weight: 700 # Bold
+
+  assets:
+    - assets/images/
+    - assets/fonts/
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
@@ -89,3 +103,9 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+flutter_native_splash:
+  color: "#FFFFFF"
+  
+  image: "assets/images/logo_lapangin.png"
+  android_gravity: center
+  ios_content_mode: center
