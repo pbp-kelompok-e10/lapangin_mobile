@@ -5,6 +5,7 @@ import 'package:lapangin/screens/venue/venue_list.dart';
 import 'package:lapangin/widgets/utils/search_bar.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:lapangin/screens/faq/faq_list.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -20,11 +21,12 @@ class _MyHomePageState extends State<MyHomePage> {
     HomePage(),
     VenuesPage(),
     DashboardPage(),
+    FaqListPage(),
     SignOutPlaceholder(),
   ];
 
   void _onItemTapped(int index) async {
-    if (index == 3) {
+    if (index == 4) {
       await _handleSignOut(context);
     } else {
       setState(() {
@@ -82,7 +84,9 @@ class _MyHomePageState extends State<MyHomePage> {
             icon: Icon(Icons.dashboard),
             label: 'Dashboard',
           ),
+          BottomNavigationBarItem(icon: Icon(Icons.help_outline), label: 'FAQ'),
           BottomNavigationBarItem(icon: Icon(Icons.logout), label: 'Sign out'),
+          
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Theme.of(context).colorScheme.primary,
