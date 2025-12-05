@@ -31,21 +31,19 @@ class VenueEntry {
 
   factory VenueEntry.fromJson(Map<String, dynamic> json) {
     return VenueEntry(
-      id: json['id'] as String,
-      name: json['stadium'] as String,
-      city: json['city'] as String,
-      homeTeams: json['home_teams'] as String? ?? '',
-      capacity: json['capacity'] as int? ?? 0,
-      country: json['country'] as String,
+      id: json['id'],
+      name: json['stadium'],
+      city: json['city'],
+      homeTeams: json['home_teams'] ?? '',
+      capacity: json['capacity'] ?? 0,
+      country: json['country'],
       price: double.tryParse(json['price'].toString()) ?? 0.0,
-      thumbnail:
-          json['thumbnail'] as String? ?? 'assets/images/venue_example.png',
-      description: json['description'] as String? ?? '',
-      ownerId: json['owner'] != null ? json['owner'] as String : null,
+      thumbnail: json['thumbnail'] ?? 'assets/images/venue_example.png',
+      description: json['description'] ?? '',
+      ownerId: json['owner'],
       rating: double.tryParse(json['rating'].toString()) ?? 0.0,
     );
   }
-
   // ----------------------------------------------------
   // CONVENIENCE METHOD (Optional: to JSON for API POST/PUT)
   // ----------------------------------------------------

@@ -1,27 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:lapangin/helper/price_formatter.dart';
 import 'package:lapangin/screens/auth/login.dart';
-//import 'package:lapangin/screens/booking/booking_history_list.dart';
 import 'package:lapangin/screens/venue/venue_list.dart';
+import 'package:lapangin/widgets/utils/fast_navigation_card.dart';
+import 'package:lapangin/widgets/utils/promotion_banner.dart';
+import 'package:lapangin/widgets/utils/recommended_venue_card.dart';
 import 'package:lapangin/widgets/utils/search_bar.dart';
 import 'package:lapangin/models/venue_entry.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
-import 'dart:convert';
+import 'dart:async';
+import 'package:lapangin/screens/venue/venue_detail.dart';
 
 Future<List<VenueEntry>> fetchRecommendedVenues(CookieRequest request) async {
   final response = await request.get(
     'http://localhost:8000/venues/api/recommended',
   );
 
-  // 1. Cek apakah responsnya adalah Map (sesuai dengan output Django)
   if (response is Map<String, dynamic>) {
-    // 1a. Cek apakah respons berisi error (untuk API side errors)
     if (response.containsKey('success') && response['success'] == false) {
       throw Exception('API Error: ${response['message']}');
     }
 
-    // 1b. Ekstrak list venue dari kunci 'venues'
     final venueListJson = response['venues'];
 
     if (venueListJson is List) {
@@ -29,21 +28,16 @@ Future<List<VenueEntry>> fetchRecommendedVenues(CookieRequest request) async {
 
       for (var data in venueListJson) {
         if (data is Map<String, dynamic>) {
-          // PENTING: Anda mungkin perlu menyesuaikan kunci JSON di fromJson jika Django menggunakan 'stadium'
-          // sementara model Dart Anda menggunakan 'name'. Lihat bagian *Catatan Khusus* di bawah.
           recommendedVenues.add(VenueEntry.fromJson(data));
         }
       }
       return recommendedVenues;
     } else {
-      // Jika Map ada, tetapi kunci 'venues' hilang atau bukan List
       throw Exception(
         'Failed to load recommended venues: "venues" key not found or is not a list.',
       );
     }
-  }
-  // 2. Jika respons bukan Map sama sekali (misal: String/Integer tak terduga)
-  else {
+  } else {
     throw Exception(
       'Failed to load recommended venues: Received unexpected top-level response format.',
     );
@@ -60,12 +54,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
 
-  static const List<Widget> _widgetOptions = <Widget>[
-    HomePage(), // Index 0: Beranda
-    VenuesPage(), // Index 1: Explore
-    //BookingHistoryListPage(), // Index 2: History (Asumsi DashboardPage/FAQ diubah menjadi History)
-    SignOutPlaceholder(), // Index 3: Profil
-  ];
+  String _searchQuery = '';
 
   void _onItemTapped(int index) async {
     if (index == 3) {
@@ -73,6 +62,7 @@ class _MyHomePageState extends State<MyHomePage> {
     } else {
       setState(() {
         _selectedIndex = index;
+        if (index != 1) _searchQuery = '';
       });
     }
   }
@@ -81,7 +71,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final request = context.read<CookieRequest>();
     try {
       final response = await request.logout(
-        "http://localhost:8000/auth/logout/",
+        "http://10.0.2.2:8000/auth/logout/",
       );
       String message = response["message"];
 
@@ -144,12 +134,8 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // IKON
             ImageIcon(AssetImage(assetPath), color: color, size: 41.0),
-
             const SizedBox(height: 2.0),
-
-            // LABEL
             Text(
               label,
               style: TextStyle(
@@ -167,63 +153,114 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    const double searchBarHeight = 85.0;
+    // 2. Tentukan widget body secara manual
+    Widget currentBody;
+
+    switch (_selectedIndex) {
+      case 0:
+        currentBody = CustomScrollView(
+          slivers: <Widget>[
+            SliverAppBar(
+              backgroundColor: Colors.white,
+              automaticallyImplyLeading: false,
+              floating: false,
+              pinned: false,
+              toolbarHeight: 0.0,
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(85.0),
+                child: CustomSearchBarAppBar(
+                  onSubmitted: (String value) {
+                    setState(() {
+                      _searchQuery = value;
+                      _selectedIndex = 1;
+                    });
+                  },
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(child: const HomePage()),
+          ],
+        );
+        break;
+      case 1:
+        currentBody = VenuesPage(initialQuery: _searchQuery);
+        break;
+      case 2:
+        currentBody = const SignOutPlaceholder(); // TODO: History
+        break;
+      case 3:
+        currentBody = const SignOutPlaceholder(); // TODO: Profile
+        break;
+      default:
+        currentBody = const HomePage();
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,
-
-      body: CustomScrollView(
-        slivers: <Widget>[
-          SliverAppBar(
-            backgroundColor: Colors.white,
-            automaticallyImplyLeading: false,
-            floating: false,
-            pinned: false,
-            toolbarHeight: 0.0,
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(searchBarHeight),
-              child: const CustomSearchBarAppBar(),
-            ),
-          ),
-
-          SliverToBoxAdapter(child: _widgetOptions.elementAt(_selectedIndex)),
-        ],
-      ),
+      body: currentBody,
       bottomNavigationBar: _buildCustomBottomNav(),
     );
   }
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final request = context.read<CookieRequest>();
+  State<HomePage> createState() => _HomePageState();
+}
 
+class _HomePageState extends State<HomePage> {
+  Future<List<VenueEntry>>? _recommendedVenuesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    final request = context.read<CookieRequest>();
+    _recommendedVenuesFuture = fetchRecommendedVenues(request);
+  }
+
+  void _navigateToVenueList() {
+    final mainState = context.findAncestorStateOfType<_MyHomePageState>();
+
+    if (mainState != null) {
+      mainState._onItemTapped(1);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. KARTU KATEGORI (Sewa Venue, FAQ, Review)
+          // BANNER CAROUSEL
+          BannerCarousel(),
+
+          const SizedBox(height: 12.0),
+
+          // KARTU KATEGORI (Sewa Venue, FAQ, Review)
           IntrinsicHeight(
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: VenueServiceCardWithOverlap(
+                  child: FastNavigationCard(
+                    imageUrl: "assets/images/menu1.jpg",
                     icon: ImageIcon(
                       AssetImage("assets/images/icon/ball_icon.png"),
                       color: Colors.white,
                       size: 41.0,
                     ),
                     title: 'Sewa Venue',
+                    onTap: _navigateToVenueList,
                   ),
                 ),
                 SizedBox(width: 12),
                 Expanded(
-                  child: VenueServiceCardWithOverlap(
+                  child: FastNavigationCard(
+                    imageUrl: "assets/images/menu2.jpg",
                     icon: ImageIcon(
                       AssetImage("assets/images/icon/faq_home_icon.png"),
                       color: Colors.white,
@@ -234,7 +271,8 @@ class HomePage extends StatelessWidget {
                 ),
                 SizedBox(width: 12),
                 Expanded(
-                  child: VenueServiceCardWithOverlap(
+                  child: FastNavigationCard(
+                    imageUrl: "assets/images/menu3.jpg",
                     icon: ImageIcon(
                       AssetImage("assets/images/icon/review_home_icon.png"),
                       color: Colors.white,
@@ -248,7 +286,7 @@ class HomePage extends StatelessWidget {
           ),
           const SizedBox(height: 24.0),
 
-          // 2. JUDUL REKOMENDASI
+          // JUDUL REKOMENDASI
           const Text(
             'Rekomendasi Venue',
             style: TextStyle(
@@ -259,9 +297,9 @@ class HomePage extends StatelessWidget {
           ),
           const SizedBox(height: 16.0),
 
-          // 3. LIST REKOMENDASI
+          // LIST REKOMENDASI
           FutureBuilder<List<VenueEntry>>(
-            future: fetchRecommendedVenues(request),
+            future: _recommendedVenuesFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -276,26 +314,46 @@ class HomePage extends StatelessWidget {
 
                 return Row(
                   children: [
-                    // Kartu 1
                     Expanded(
-                      child: VenueCard(
-                        location: venues[0].city,
-                        name: venues[0].name,
-                        rating: venues[0].rating,
-                        price: venues[0].price,
-                        imageUrl: venues[0].thumbnail,
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  VenueDetailPage(venueId: venues[0].id),
+                            ),
+                          );
+                        },
+                        child: VenueCard(
+                          location: venues[0].city,
+                          name: venues[0].name,
+                          rating: venues[0].rating,
+                          price: venues[0].price,
+                          imageUrl: venues[0].thumbnail,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 16.0),
-
                     if (venues.length > 1)
                       Expanded(
-                        child: VenueCard(
-                          location: venues[1].city,
-                          name: venues[1].name,
-                          rating: venues[1].rating,
-                          price: venues[1].price,
-                          imageUrl: venues[1].thumbnail,
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    VenueDetailPage(venueId: venues[1].id),
+                              ),
+                            );
+                          },
+                          child: VenueCard(
+                            location: venues[1].city,
+                            name: venues[1].name,
+                            rating: venues[1].rating,
+                            price: venues[1].price,
+                            imageUrl: venues[1].thumbnail,
+                          ),
                         ),
                       )
                     else
@@ -307,286 +365,6 @@ class HomePage extends StatelessWidget {
           ),
 
           const SizedBox(height: 24.0),
-
-          // 4. PROMOSI BANNER 1
-          const PromotionBanner(
-            title: 'Temukan & Booking dalam Sekejap',
-            imageUrl: 'assets/images/cta_1.png',
-            isPrimary: true,
-          ),
-          const SizedBox(height: 16.0),
-
-          // 5. PROMOSI BANNER 2
-          const PromotionBanner(
-            title: 'Jangkau Lebih Banyak Pengguna',
-            imageUrl: 'assets/images/cta_2.png',
-            isPrimary: false,
-          ),
-          const SizedBox(height: 30.0),
-        ],
-      ),
-    );
-  }
-}
-
-class CategoryCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const CategoryCard({super.key, required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-        child: Column(
-          children: [
-            Container(
-              height: 60,
-              width: 60,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              child: Icon(icon, color: Theme.of(context).colorScheme.primary),
-            ),
-            const SizedBox(height: 8.0),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontFamily: "Poppins",
-                fontSize: 12.0,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class VenueCard extends StatelessWidget {
-  final String location;
-  final String name;
-  final double rating;
-  final double price;
-  final String imageUrl;
-
-  const VenueCard({
-    super.key,
-    required this.location,
-    required this.name,
-    required this.rating,
-    required this.price,
-    required this.imageUrl,
-  });
-
-  Widget _buildVenueImage(String imageUrl) {
-    const base64Header = 'data:image';
-
-    if (imageUrl.startsWith(base64Header)) {
-      final parts = imageUrl.split(',');
-      if (parts.length > 1) {
-        try {
-          final bytes = base64Decode(parts[1].trim());
-
-          return Image.memory(
-            bytes,
-            fit: BoxFit.cover,
-            height: 120,
-            width: double.infinity,
-          );
-        } catch (e) {
-          return const Center(child: Text('Error decoding image'));
-        }
-      }
-    } else if (imageUrl.startsWith('http')) {
-      return Image.network(
-        imageUrl,
-        fit: BoxFit.cover,
-        height: 120,
-        width: double.infinity,
-        loadingBuilder: (c, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return const Center(child: CircularProgressIndicator());
-        },
-        errorBuilder: (c, o, s) =>
-            const Center(child: Icon(Icons.broken_image)),
-      );
-    }
-
-    if (imageUrl.isNotEmpty) {
-      return Image.asset(
-        imageUrl,
-        fit: BoxFit.cover,
-        height: 120,
-        width: double.infinity,
-        errorBuilder: (c, o, s) => const Center(child: Icon(Icons.error)),
-      );
-    }
-
-    // Placeholder jika string kosong
-    return Container(height: 120, color: Colors.grey.shade300);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 0),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Gambar
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ClipRRect(
-              borderRadius: const BorderRadius.all(Radius.circular(10)),
-              child: Container(
-                height: 120,
-                width: double.infinity,
-                child: _buildVenueImage(imageUrl),
-              ),
-            ),
-          ),
-
-          // Detail Teks
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Lokasi
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(
-                      0.5,
-                    ), // Latar belakang gelap transparan
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    '📍 $location',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontFamily: "Poppins",
-                      fontSize: 10,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                // Nama Venue
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontFamily: "Poppins",
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 4),
-
-                // Rating
-                Row(
-                  children: [
-                    const Icon(Icons.star, color: Colors.amber, size: 14),
-                    const SizedBox(width: 4),
-                    Text('$rating', style: const TextStyle(fontSize: 12)),
-                  ],
-                ),
-                const SizedBox(height: 8),
-
-                // Harga
-                Text(
-                  "Rp" + formatRupiah(price).toString(),
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class PromotionBanner extends StatelessWidget {
-  final String title;
-  final String imageUrl;
-  final bool isPrimary;
-
-  const PromotionBanner({
-    super.key,
-    required this.title,
-    required this.imageUrl,
-    required this.isPrimary,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final primaryColor = Color(0xFF003C9C);
-
-    return Container(
-      height: 170,
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: isPrimary ? primaryColor : Color(0x80BED7FF),
-        borderRadius: BorderRadius.circular(12.0),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Teks Promosi
-          Expanded(
-            flex: 1,
-            child: Text(
-              title,
-              style: TextStyle(
-                fontFamily: "Poppins",
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: isPrimary ? Colors.white : Color(0xFF003C9C),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-
-          // Gambar Banner
-          Expanded(
-            flex: 1,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8.0),
-              child: Image.asset(
-                imageUrl,
-                fit: BoxFit.cover,
-                height: double.infinity,
-                errorBuilder: (c, o, s) => Container(
-                  color: Colors.grey,
-                  child: const Center(child: Icon(Icons.image_not_supported)),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -595,6 +373,7 @@ class PromotionBanner extends StatelessWidget {
 
 class SignOutPlaceholder extends StatelessWidget {
   const SignOutPlaceholder({super.key});
+
   @override
   Widget build(BuildContext context) {
     return const Center(
@@ -603,100 +382,104 @@ class SignOutPlaceholder extends StatelessWidget {
   }
 }
 
-class VenueServiceCardWithOverlap extends StatelessWidget {
-  final String title;
-  final Widget icon;
-  final Color iconBackgroundColor;
-  final VoidCallback? onTap;
+class BannerCarousel extends StatefulWidget {
+  const BannerCarousel({super.key});
 
-  const VenueServiceCardWithOverlap({
-    Key? key,
-    required this.title,
-    required this.icon,
-    this.iconBackgroundColor = const Color(0xFF003C9C),
-    this.onTap,
-  }) : super(key: key);
+  @override
+  State<BannerCarousel> createState() => _BannerCarouselState();
+}
+
+class _BannerCarouselState extends State<BannerCarousel> {
+  final PageController _pageController = PageController();
+  int _currentBannerPage = 0;
+  Timer? _autoScrollTimer;
+
+  final List<Map<String, dynamic>> _banners = [
+    {
+      'title': 'Temukan & Booking dalam Sekejap',
+      'imageUrl': 'assets/images/cta_1.png',
+      'isPrimary': true,
+    },
+    {
+      'title': 'Jangkau Lebih Banyak Pengguna',
+      'imageUrl': 'assets/images/cta_2.png',
+      'isPrimary': false,
+    },
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _startAutoScroll();
+  }
+
+  void _startAutoScroll() {
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (_pageController.hasClients) {
+        int nextPage = (_currentBannerPage + 1) % _banners.length;
+        _pageController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 700),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoScrollTimer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    const double iconSize = 35.5;
-    const double grayAreaHeight = 74.0;
-    const double iconOverlapFromBottom = iconSize / 2;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        child: Card(
-          margin: EdgeInsets.all(0),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          elevation: 3.0,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              // Main Card Content
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Gray area
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Container(
-                      height: grayAreaHeight,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                    ),
-                  ),
-
-                  // Text area
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      top: iconOverlapFromBottom,
-                      left: 8.0,
-                      right: 8.0,
-                      bottom: 16.0,
-                    ),
-                    child: Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                        fontFamily: "Poppins",
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              // Circular Icon
-              Positioned(
-                left: 8,
-                top: 8.0 + grayAreaHeight - iconOverlapFromBottom,
-                child: Container(
-                  width: iconSize,
-                  height: iconSize,
-                  decoration: BoxDecoration(
-                    color: iconBackgroundColor,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 8.0,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: icon,
+    return Column(
+      children: [
+        SizedBox(
+          height: 170,
+          child: PageView.builder(
+            controller: _pageController,
+            onPageChanged: (int page) {
+              setState(() {
+                _currentBannerPage = page;
+              });
+            },
+            itemCount: _banners.length,
+            itemBuilder: (context, index) {
+              final banner = _banners[index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child: PromotionBanner(
+                  title: banner['title'],
+                  imageUrl: banner['imageUrl'],
+                  isPrimary: banner['isPrimary'],
                 ),
-              ),
-            ],
+              );
+            },
           ),
         ),
-      ),
+        const SizedBox(height: 12.0),
+        // DOT INDICATOR
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(
+            _banners.length,
+            (index) => Container(
+              margin: const EdgeInsets.symmetric(horizontal: 4.0),
+              width: 8.0,
+              height: 8.0,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4.0),
+                color: _currentBannerPage == index
+                    ? const Color(0xFF003C9C)
+                    : Colors.grey.shade300,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

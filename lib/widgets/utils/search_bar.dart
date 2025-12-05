@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
 
 class CustomSearchBarAppBar extends StatelessWidget {
-  const CustomSearchBarAppBar({super.key});
+  final Function(String)? onSubmitted;
+  const CustomSearchBarAppBar({super.key, this.onSubmitted});
 
   @override
   Widget build(BuildContext context) {
-    // 1. Get system padding (Status Bar Height)
-
-    // 2. We use SafeArea to push content below the status bar.
-    // The top padding is applied automatically by SafeArea.
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 24),
 
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment:
-              MainAxisAlignment.center, // Center contents vertically
+          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             // Search Bar Row
             Row(
@@ -36,8 +32,9 @@ class CustomSearchBarAppBar extends StatelessWidget {
                         width: 1.0,
                       ),
                     ),
-                    child: const TextField(
-                      decoration: InputDecoration(
+                    child: TextField(
+                      onSubmitted: onSubmitted,
+                      decoration: const InputDecoration(
                         hintText: 'Cari Stadion',
                         hintStyle: TextStyle(color: Color(0xFFA1A1A1)),
                         border: InputBorder.none,
