@@ -6,6 +6,7 @@ import 'package:lapangin/widgets/utils/search_bar.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lapangin/screens/faq/faq_list.dart';
+import 'package:lapangin/screens/user_admin/user_list_page.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -86,7 +87,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           BottomNavigationBarItem(icon: Icon(Icons.help_outline), label: 'FAQ'),
           BottomNavigationBarItem(icon: Icon(Icons.logout), label: 'Sign out'),
-          
+
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Theme.of(context).colorScheme.primary,
@@ -102,7 +103,27 @@ class HomePage extends StatelessWidget {
   const HomePage({super.key});
   @override
   Widget build(BuildContext context) {
-    return const Center();
+    return Scaffold(
+      body: const Center(
+        child: Text(
+          'Welcome to Lapangin',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const UserListPage(),
+            ),
+          );
+        },
+        icon: const Icon(Icons.people),
+        label: const Text('User Management'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
+    );
   }
 }
 
