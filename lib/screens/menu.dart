@@ -57,7 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String _searchQuery = '';
 
   void _onItemTapped(int index) async {
-    if (index == 3) {
+    if (index == 4) {
       await _handleSignOut(context);
     } else {
       setState(() {
