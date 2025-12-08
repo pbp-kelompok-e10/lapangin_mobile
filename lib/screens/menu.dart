@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lapangin/screens/auth/login.dart';
+import 'package:lapangin/screens/booking/booking_history_list.dart';
 import 'package:lapangin/screens/venue/venue_list.dart';
 import 'package:lapangin/widgets/utils/fast_navigation_card.dart';
 import 'package:lapangin/widgets/utils/promotion_banner.dart';
@@ -187,7 +188,7 @@ class _MyHomePageState extends State<MyHomePage> {
         currentBody = VenuesPage(initialQuery: _searchQuery);
         break;
       case 2:
-        currentBody = const SignOutPlaceholder(); // TODO: History
+        currentBody = const BookingHistoryPage();
         break;
       case 3:
         currentBody = const SignOutPlaceholder(); // TODO: Profile
