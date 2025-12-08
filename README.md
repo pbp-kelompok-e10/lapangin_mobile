@@ -18,19 +18,19 @@ Aplikasi Lapangin dirancang untuk membantu klub atau panitia pertandingan untuk 
 
 ## Daftar Modul
 
-1.  Review Stadion
+1.  Review Stadion (Rheina Adinda Morani Sinurat)
     Pada halaman ini, pengguna dapat menambahkan ulasan atau review terhadap Stadion yang telah mereka sewa. Pengguna dan admin memiliki akses untuk mengedit dan menghapus review.
 
-2.  Pencarian Stadion
+2.  Pencarian Stadion (Prasetya Surya Syahputra)
     Menu ini memungkinkan pengguna untuk menjelajahi daftar Stadion yang tersedia berdasarkan lokasi, kapasitas, dan pengelola stadion. Admin memiliki akses untuk menambahkan, mengedit, dan menghapus data venue agar informasi selalu up to date.
 
-3.  Booking Stadion
+3.  Booking Stadion (Muhammad Fadhlurrohman Pasya)
     Pengguna dapat melakukan pemesanan Stadion untuk tanggal dan waktu tertentu. Saat melakukan booking, Pengguna dan admin juga dapat mengedit atau membatalkan booking sebelum waktu penyewaan dimulai.
 
-4.  User
+4.  User (Muhammad Tristan Malik Anbiya)
     Admin dapat melihat daftar pengguna yang terdaftar dalam aplikasi. Selain itu, admin juga dapat menambahkan pengguna baru, mengedit data pengguna, atau menghapus akun pengguna yang tidak aktif.
 
-5.  FAQ
+5.  FAQ (Angga Ziaurrohchman)
     Pengguna dapat melihat jawaban dari FAQ, admin dapat menambahkan, menghapus, dan mengedit FAQ
 
 ## Sumber Initial Dataset kategori utama produk
