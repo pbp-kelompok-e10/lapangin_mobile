@@ -71,6 +71,7 @@ class _LoginPageState extends State<LoginPage> {
                   fontSize: 32.0,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
+                  fontFamily: "Poppins",
                 ),
               ),
               const SizedBox(height: 36.0),
@@ -78,12 +79,36 @@ class _LoginPageState extends State<LoginPage> {
               // Input Username
               TextField(
                 controller: _usernameController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Username',
+                  labelStyle: TextStyle(
+                    color: Color(0xFFE5E5E5),
+                    fontFamily: "Poppins",
+                  ),
+                  floatingLabelStyle: TextStyle(
+                    color: Color(0xFF0062FF),
+                    fontFamily: "Poppins",
+                  ),
+                  hintStyle: TextStyle(
+                    color: Color(0xFFE5E5E5),
+                    fontFamily: "Poppins",
+                  ),
                   hintText: 'Masukkan username Anda',
-                  prefixIcon: Icon(Icons.person_outline, color: Colors.grey),
-                  border: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.yellow, width: 2.0),
+                  prefixIcon: Icon(
+                    Icons.person_outline,
+                    color: Color(0xFFE5E5E5),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Color(0xFFE5E5f5),
+                      width: 1.0,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Color(0xFF0062FF),
+                      width: 1.0,
+                    ),
                   ),
                 ),
               ),
@@ -95,17 +120,26 @@ class _LoginPageState extends State<LoginPage> {
                 obscureText: !_isPasswordVisible,
                 decoration: InputDecoration(
                   labelText: 'Kata Sandi',
-                  hintText: 'Masukkan kata sandi Anda',
-                  prefixIcon: const Icon(
-                    Icons.lock_outline,
-                    color: Colors.grey,
+                  labelStyle: TextStyle(
+                    color: Color(0xFFE5E5E5),
+                    fontFamily: "Poppins",
                   ),
+                  floatingLabelStyle: TextStyle(
+                    color: Color(0xFF0062FF),
+                    fontFamily: "Poppins",
+                  ),
+                  hintText: 'Masukkan kata sandi Anda',
+                  hintStyle: TextStyle(
+                    color: Color(0xFFE5E5E5),
+                    fontFamily: "Poppins",
+                  ),
+                  prefixIcon: const Icon(Icons.key, color: Color(0xFFE5E5E5)),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _isPasswordVisible
                           ? Icons.visibility
                           : Icons.visibility_off,
-                      color: Colors.grey,
+                      color: Color(0xFFE5E5E5),
                     ),
                     onPressed: () {
                       setState(() {
@@ -113,8 +147,18 @@ class _LoginPageState extends State<LoginPage> {
                       });
                     },
                   ),
-                  border: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.yellow, width: 2.0),
+
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Color(0xFFE5E5E5),
+                      width: 1.0,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Color(0xFF0062FF),
+                      width: 1.0,
+                    ),
                   ),
                 ),
               ),
@@ -152,14 +196,21 @@ class _LoginPageState extends State<LoginPage> {
                       showDialog(
                         context: context,
                         builder: (context) => AlertDialog(
-                          title: const Text('Gagal Masuk'),
+                          title: const Text(
+                            'Gagal Masuk',
+                            style: TextStyle(fontFamily: "Poppins"),
+                          ),
                           content: Text(
                             response['message'] ??
                                 'Terjadi kesalahan saat mencoba masuk.',
+                            style: TextStyle(fontFamily: "Poppins"),
                           ),
                           actions: [
                             TextButton(
-                              child: const Text('OK'),
+                              child: const Text(
+                                'OK',
+                                style: TextStyle(fontFamily: "Poppins"),
+                              ),
                               onPressed: () {
                                 Navigator.pop(context);
                               },
@@ -182,7 +233,11 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 child: const Text(
                   'Masuk',
-                  style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 18.0,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: "Poppins",
+                  ),
                 ),
               ),
               const SizedBox(height: 36.0),
@@ -193,7 +248,13 @@ class _LoginPageState extends State<LoginPage> {
                   Expanded(child: Divider(thickness: 1, color: Colors.grey)),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 10.0),
-                    child: Text('Atau', style: TextStyle(color: Colors.grey)),
+                    child: Text(
+                      'Atau',
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontFamily: "Poppins",
+                      ),
+                    ),
                   ),
                   Expanded(child: Divider(thickness: 1, color: Colors.grey)),
                 ],
@@ -205,7 +266,7 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   const Text(
                     'Belum punya Akun?',
-                    style: TextStyle(fontSize: 16.0),
+                    style: TextStyle(fontSize: 16.0, fontFamily: "Poppins"),
                   ),
                   const SizedBox(width: 4.0),
                   GestureDetector(
@@ -223,6 +284,7 @@ class _LoginPageState extends State<LoginPage> {
                         color: Theme.of(context).colorScheme.primary,
                         fontSize: 16.0,
                         fontWeight: FontWeight.bold,
+                        fontFamily: "Poppins",
                       ),
                     ),
                   ),
