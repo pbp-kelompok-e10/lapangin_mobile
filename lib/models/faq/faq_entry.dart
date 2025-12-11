@@ -1,5 +1,4 @@
 
-//     final faqEntry = faqEntryFromJson(jsonString);
 
 import 'dart:convert';
 
