@@ -10,6 +10,7 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 import 'package:lapangin/screens/venue/venue_detail.dart';
+import 'package:lapangin/screens/faq/faq_list.dart';
 
 Future<List<VenueEntry>> fetchRecommendedVenues(CookieRequest request) async {
   final response = await request.get(
@@ -267,6 +268,15 @@ class _HomePageState extends State<HomePage> {
                       size: 41.0,
                     ),
                     title: 'Frequently Asked Questions',
+                    onTap: 
+                        () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FaqListPage(),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 SizedBox(width: 12),
