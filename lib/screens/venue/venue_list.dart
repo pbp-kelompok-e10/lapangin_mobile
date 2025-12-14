@@ -8,7 +8,9 @@ import 'package:lapangin/screens/venue/venue_detail.dart';
 import 'package:lapangin/screens/venue/create_venue_form.dart';
 
 Future<List<VenueEntry>> fetchAllVenues(CookieRequest request) async {
-  final response = await request.get('http://localhost:8000/venues/api/venues');
+  final response = await request.get(
+    'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/venues',
+  );
 
   if (response is Map<String, dynamic>) {
     // Cek apakah ada error
@@ -148,7 +150,8 @@ class _VenuesPageState extends State<VenuesPage> {
 
   Future<void> _deleteVenueApi(VenueEntry venue) async {
     final request = context.read<CookieRequest>();
-    final url = 'http://localhost:8000/venues/api/delete/${venue.id}/';
+    final url =
+        'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/delete/${venue.id}/';
 
     try {
       final response = await request.post(url, {});
@@ -214,7 +217,8 @@ class _VenuesPageState extends State<VenuesPage> {
 
   Future<void> _fetchPermissionStatus() async {
     final request = context.read<CookieRequest>();
-    const url = 'http://localhost:8000/venues/api/permission/create/';
+    const url =
+        'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/permission/create/';
 
     try {
       final response = await request.get(url);

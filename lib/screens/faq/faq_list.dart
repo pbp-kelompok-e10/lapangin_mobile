@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
-import 'package:lapangin/models/faq/faq_entry.dart'; 
-import 'package:lapangin/widgets/faq/faq_card.dart'; 
-import 'package:lapangin/screens/faq/faq_form.dart'; 
+import 'package:lapangin/models/faq/faq_entry.dart';
+import 'package:lapangin/widgets/faq/faq_card.dart';
+import 'package:lapangin/screens/faq/faq_form.dart';
 
 class FaqListPage extends StatefulWidget {
   const FaqListPage({super.key});
@@ -14,37 +14,38 @@ class FaqListPage extends StatefulWidget {
 
 class _FaqListPageState extends State<FaqListPage> {
   String selectedCategory = 'Semua';
-  
+
   final List<Map<String, String>> categories = [
     {'code': 'all', 'name': 'Semua'},
     {'code': 'umum', 'name': 'Umum'},
     {'code': 'booking', 'name': 'Booking'},
-    {'code': 'pembayaran', 'name': 'Pembayaran'}, 
+    {'code': 'pembayaran', 'name': 'Pembayaran'},
     {'code': 'venue', 'name': 'Venue'},
   ];
 
   // Fungsi untuk cek apakah user adalah admin (staff)
   bool isUserAdmin(CookieRequest request) {
     // Cek dari response login atau dari jsonData
-    
+
     return request.loggedIn && request.jsonData['is_staff'] == true;
   }
 
   Future<List<FaqEntry>> fetchFaq(CookieRequest request) async {
-    const String baseUrl = 'http://localhost:8000'; //Chrome
+    const String baseUrl =
+        'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id'; //Chrome
     // const String baseUrl = 'http://10.0.2.2:8000'; //Emulator
-    
+
     String categoryCode = categories.firstWhere(
       (cat) => cat['name'] == selectedCategory,
       orElse: () => {'code': 'all'},
     )['code']!;
-    
+
     String url = categoryCode == 'all'
         ? '$baseUrl/faq/json/'
         : '$baseUrl/faq/json/$categoryCode/';
-    
+
     final response = await request.get(url);
-    
+
     List<FaqEntry> listFaq = [];
     for (var d in response) {
       if (d != null) {
@@ -55,13 +56,14 @@ class _FaqListPageState extends State<FaqListPage> {
   }
 
   Future<void> deleteFaq(CookieRequest request, int faqId) async {
-    const String baseUrl = 'http://localhost:8000'; 
-    
+    const String baseUrl =
+        'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id';
+
     final response = await request.post(
       '$baseUrl/faq/delete-flutter/$faqId/',
       {},
     );
-    
+
     if (response['status'] == 'success') {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -99,7 +101,7 @@ class _FaqListPageState extends State<FaqListPage> {
       body: Column(
         children: [
           const SizedBox(height: 8),
-          
+
           // Category Pills (Filter)
           Container(
             height: 50,
@@ -110,7 +112,7 @@ class _FaqListPageState extends State<FaqListPage> {
               itemBuilder: (context, index) {
                 final category = categories[index];
                 final isSelected = selectedCategory == category['name'];
-                
+
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
@@ -124,12 +126,14 @@ class _FaqListPageState extends State<FaqListPage> {
                     backgroundColor: Colors.white,
                     selectedColor: const Color(0xFF003C9C),
                     labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : const Color(0xFF003C9C),
+                      color: isSelected
+                          ? Colors.white
+                          : const Color(0xFF003C9C),
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
                     side: BorderSide(
-                      color: isSelected 
+                      color: isSelected
                           ? const Color(0xFF003C9C)
                           : const Color(0xFFE5E7EB),
                       width: 2,
@@ -137,15 +141,18 @@ class _FaqListPageState extends State<FaqListPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                   ),
                 );
               },
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Add FAQ Button - HANYA MUNCUL KALAU ADMIN!
           if (isAdmin)
             Padding(
@@ -177,9 +184,9 @@ class _FaqListPageState extends State<FaqListPage> {
                 ),
               ),
             ),
-          
+
           if (isAdmin) const SizedBox(height: 16),
-          
+
           // FAQ List
           Expanded(
             child: FutureBuilder(
@@ -187,9 +194,7 @@ class _FaqListPageState extends State<FaqListPage> {
               builder: (context, AsyncSnapshot snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFF003C9C),
-                    ),
+                    child: CircularProgressIndicator(color: Color(0xFF003C9C)),
                   );
                 } else if (!snapshot.hasData || snapshot.data.isEmpty) {
                   return Center(
@@ -222,41 +227,45 @@ class _FaqListPageState extends State<FaqListPage> {
                       return FaqCard(
                         faq: faq,
                         isAdmin: isAdmin, // Pass status admin ke card
-                        onEdit: isAdmin ? () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => FaqFormPage(faq: faq),
-                            ),
-                          ).then((_) => setState(() {}));
-                        } : null,
-                        onDelete: isAdmin ? () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Konfirmasi Hapus'),
-                              content: Text(
-                                'Apakah Anda yakin ingin menghapus FAQ:\n"${faq.fields.question}"?',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Batal'),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    deleteFaq(request, faq.pk);
-                                  },
-                                  child: const Text(
-                                    'Hapus',
-                                    style: TextStyle(color: Colors.red),
+                        onEdit: isAdmin
+                            ? () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => FaqFormPage(faq: faq),
                                   ),
-                                ),
-                              ],
-                            ),
-                          );
-                        } : null,
+                                ).then((_) => setState(() {}));
+                              }
+                            : null,
+                        onDelete: isAdmin
+                            ? () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Konfirmasi Hapus'),
+                                    content: Text(
+                                      'Apakah Anda yakin ingin menghapus FAQ:\n"${faq.fields.question}"?',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text('Batal'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                          deleteFaq(request, faq.pk);
+                                        },
+                                        child: const Text(
+                                          'Hapus',
+                                          style: TextStyle(color: Colors.red),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
+                            : null,
                       );
                     },
                   );

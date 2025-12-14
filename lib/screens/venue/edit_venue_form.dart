@@ -74,7 +74,8 @@ class _EditVenuePageState extends State<EditVenuePage> {
 
       try {
         // Endpoint edit venue di Django
-        final url = "http://localhost:8000/venues/api/edit/${widget.venueId}";
+        final url =
+            "https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/edit/${widget.venueId}";
 
         final response = await request.postJson(
           url,

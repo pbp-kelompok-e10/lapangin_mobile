@@ -14,7 +14,7 @@ import 'package:lapangin/screens/faq/faq_list.dart';
 
 Future<List<VenueEntry>> fetchRecommendedVenues(CookieRequest request) async {
   final response = await request.get(
-    'http://localhost:8000/venues/api/recommended',
+    'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/recommended',
   );
 
   if (response is Map<String, dynamic>) {
@@ -72,7 +72,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final request = context.read<CookieRequest>();
     try {
       final response = await request.logout(
-        "http://10.0.2.2:8000/auth/logout/",
+        "https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/auth/logout/",
       );
       String message = response["message"];
 
@@ -268,8 +268,7 @@ class _HomePageState extends State<HomePage> {
                       size: 41.0,
                     ),
                     title: 'Frequently Asked Questions',
-                    onTap: 
-                        () {
+                    onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(

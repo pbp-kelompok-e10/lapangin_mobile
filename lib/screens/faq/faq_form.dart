@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
-import 'package:lapangin/models/faq/faq_entry.dart'; 
+import 'package:lapangin/models/faq/faq_entry.dart';
 
 class FaqFormPage extends StatefulWidget {
   final FaqEntry? faq; // Kalau edit, akan ada data FAQ. Kalau add, null.
@@ -68,10 +68,7 @@ class _FaqFormPageState extends State<FaqFormPage> {
                 isEdit
                     ? 'Perbarui informasi FAQ yang sudah ada'
                     : 'Tambahkan pertanyaan yang sering ditanyakan',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
               ),
               const SizedBox(height: 24),
 
@@ -250,8 +247,8 @@ class _FaqFormPageState extends State<FaqFormPage> {
                       onPressed: () async {
                         if (_formKey.currentState!.validate()) {
                           String url = isEdit
-                              ? 'http://localhost:8000/faq/update-flutter/${widget.faq!.pk}/'
-                              : 'http://localhost:8000/faq/create-flutter/';
+                              ? 'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/faq/update-flutter/${widget.faq!.pk}/'
+                              : 'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/faq/create-flutter/';
 
                           final response = await request.postJson(
                             url,
@@ -278,7 +275,9 @@ class _FaqFormPageState extends State<FaqFormPage> {
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text("Terjadi kesalahan, silakan coba lagi."),
+                                  content: Text(
+                                    "Terjadi kesalahan, silakan coba lagi.",
+                                  ),
                                   backgroundColor: Colors.red,
                                 ),
                               );
@@ -301,9 +300,7 @@ class _FaqFormPageState extends State<FaqFormPage> {
                           const SizedBox(width: 8),
                           Text(
                             isEdit ? 'Update FAQ' : 'Simpan FAQ',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),

@@ -10,7 +10,7 @@ Future<VenueEntry> fetchVenueDetail(
   String venueId,
 ) async {
   final response = await request.get(
-    'http://localhost:8000/venues/api/detail/$venueId/',
+    'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/detail/$venueId/',
   );
 
   if (response is Map<String, dynamic> &&

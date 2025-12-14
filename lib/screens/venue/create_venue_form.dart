@@ -35,7 +35,7 @@ class _CreateVenuePageState extends State<CreateVenuePage> {
 
       try {
         final response = await request.postJson(
-          "http://localhost:8000/venues/api/create/",
+          "https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/create/",
           jsonEncode({
             'name': _name,
             'city': _city,
