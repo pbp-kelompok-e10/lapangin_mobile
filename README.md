@@ -3,7 +3,7 @@
 [![Build Status](https://app.bitrise.io/app/05284808-ea5e-4425-8dc4-3de2310230a8/status.svg?token=F4QykT0EYK4SL1MGYWdW2g&branch=master)](https://app.bitrise.io/app/05284808-ea5e-4425-8dc4-3de2310230a8)
 
 ## Download
-Download aplikasi versi terbaru: [Download APK](https://app.bitrise.io/app/05284808-ea5e-4425-8dc4-3de2310230a8/installable-artifacts/b9579a86d7841c80/public-install-page/cbdc4ded85a3834e275d11af65cbf4a6)
+Download aplikasi versi terbaru: [Download APK](https://app.bitrise.io/app/05284808-ea5e-4425-8dc4-3de2310230a8/installable-artifacts/0b09e42451ec5676/public-install-page/7dd5878803b1454194033d59742b6e00)
 
 # TUGAS KELOMPOK PBP E
 
