@@ -258,7 +258,7 @@ class _HomePageState extends State<HomePage> {
                     onTap: _navigateToVenueList,
                   ),
                 ),
-                SizedBox(width: 12),
+                SizedBox(width: 7),
                 Expanded(
                   child: FastNavigationCard(
                     imageUrl: "assets/images/menu2.jpg",
@@ -278,7 +278,7 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                 ),
-                SizedBox(width: 12),
+                SizedBox(width: 7),
                 Expanded(
                   child: FastNavigationCard(
                     imageUrl: "assets/images/menu3.jpg",

@@ -5,8 +5,6 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
 void main() {
-  // Pastikan Anda membungkus aplikasi Anda dengan ChangeNotifierProvider
-  // atau widget lain yang menyediakan CookieRequest jika Anda menggunakan Provider
   runApp(const LoginApp());
 }
 
@@ -15,7 +13,7 @@ class LoginApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color primaryColor = Color(0x000062FF);
+    const Color primaryColor = Color(0xFF0062FF);
 
     return MaterialApp(
       title: 'Masuk',
@@ -40,6 +38,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -48,10 +47,105 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  Future<void> _handleLogin() async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final request = context.read<CookieRequest>();
+
+    String username = _usernameController.text;
+    String password = _passwordController.text;
+
+    try {
+      final response = await request.login(
+        "https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/auth/login/",
+        {'username': username, 'password': password},
+      );
+
+      if (request.loggedIn) {
+        String message = response['message'];
+        String uname = response['username'];
+        if (context.mounted) {
+          // Navigasi
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => MyHomePage()),
+          );
+          // Tampilkan SnackBar
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(content: Text("$message Selamat datang, $uname.")),
+            );
+        }
+      } else {
+        // Gagal login
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text(
+                'Gagal Masuk',
+                style: TextStyle(fontFamily: "Poppins"),
+              ),
+              content: Text(
+                response['message'] ?? 'Terjadi kesalahan saat mencoba masuk.',
+                style: TextStyle(fontFamily: "Poppins"),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    'OK',
+                    style: TextStyle(fontFamily: "Poppins"),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Handle kesalahan (misalnya, masalah jaringan)
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text(
+              'Kesalahan Jaringan',
+              style: TextStyle(fontFamily: "Poppins"),
+            ),
+            content: Text(
+              'Tidak dapat terhubung ke server. Silakan coba lagi. Error: $e',
+              style: TextStyle(fontFamily: "Poppins"),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'OK',
+                  style: TextStyle(fontFamily: "Poppins"),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    } finally {
+      // Pastikan status loading diatur ulang terlepas dari berhasil/gagal
+      if (context.mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final request = context.watch<CookieRequest>();
-
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
@@ -79,6 +173,7 @@ class _LoginPageState extends State<LoginPage> {
               // Input Username
               TextField(
                 controller: _usernameController,
+                // ... (styling) ...
                 decoration: InputDecoration(
                   labelText: 'Username',
                   labelStyle: TextStyle(
@@ -166,64 +261,12 @@ class _LoginPageState extends State<LoginPage> {
 
               // Tombol Masuk
               ElevatedButton(
-                onPressed: () async {
-                  String username = _usernameController.text;
-                  String password = _passwordController.text;
-
-                  final response = await request.login(
-                    "https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/auth/login/",
-                    {'username': username, 'password': password},
-                  );
-
-                  if (request.loggedIn) {
-                    String message = response['message'];
-                    String uname = response['username'];
-                    if (context.mounted) {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => MyHomePage()),
-                      );
-                      ScaffoldMessenger.of(context)
-                        ..hideCurrentSnackBar()
-                        ..showSnackBar(
-                          SnackBar(
-                            content: Text("$message Selamat datang, $uname."),
-                          ),
-                        );
-                    }
-                  } else {
-                    if (context.mounted) {
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text(
-                            'Gagal Masuk',
-                            style: TextStyle(fontFamily: "Poppins"),
-                          ),
-                          content: Text(
-                            response['message'] ??
-                                'Terjadi kesalahan saat mencoba masuk.',
-                            style: TextStyle(fontFamily: "Poppins"),
-                          ),
-                          actions: [
-                            TextButton(
-                              child: const Text(
-                                'OK',
-                                style: TextStyle(fontFamily: "Poppins"),
-                              ),
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-                  }
-                },
+                onPressed: _isLoading ? null : _handleLogin,
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: _isLoading
+                      ? Theme.of(context).colorScheme.primary.withOpacity(0.5)
+                      : Theme.of(context).colorScheme.primary,
                   foregroundColor: Colors.white,
-                  backgroundColor: Theme.of(context).colorScheme.primary,
                   minimumSize: const Size(double.infinity, 50),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8.0),
@@ -231,14 +274,23 @@ class _LoginPageState extends State<LoginPage> {
                   padding: const EdgeInsets.symmetric(vertical: 14.0),
                   elevation: 5,
                 ),
-                child: const Text(
-                  'Masuk',
-                  style: TextStyle(
-                    fontSize: 18.0,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: "Poppins",
-                  ),
-                ),
+                child: _isLoading
+                    ? SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 3,
+                        ),
+                      )
+                    : const Text(
+                        'Masuk',
+                        style: TextStyle(
+                          fontSize: 18.0,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: "Poppins",
+                        ),
+                      ),
               ),
               const SizedBox(height: 36.0),
 
@@ -261,6 +313,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 36.0),
 
+              // Bagian Daftar
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -271,6 +324,7 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(width: 4.0),
                   GestureDetector(
                     onTap: () {
+                      if (_isLoading) return;
                       Navigator.push(
                         context,
                         MaterialPageRoute(
