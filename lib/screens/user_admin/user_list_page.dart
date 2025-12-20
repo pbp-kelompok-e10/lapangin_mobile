@@ -3,6 +3,8 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lapangin/screens/user_admin/user.dart';
 import 'package:lapangin/screens/user_admin/user_service.dart';
+import 'package:lapangin/screens/user_admin/user_form_page.dart';
+import 'package:lapangin/screens/user_admin/user_detail_page.dart';
 
 class UserListPage extends StatefulWidget {
   const UserListPage({super.key});
@@ -69,32 +71,12 @@ class _UserListPageState extends State<UserListPage> {
     }
   }
 
-  /// Filter users
-  void _filterUsers() {
-    setState(() {
-      _filteredUsers = _users.where((user) {
-        // Search filter
-        bool matchSearch = _searchQuery.isEmpty ||
-            user.username.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            (user.name?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
-            (user.email?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
-
-        // Status filter
-        bool matchStatus = _statusFilter == 'all' ||
-            (_statusFilter == 'active' && user.isActive) ||
-            (_statusFilter == 'inactive' && !user.isActive);
-
-        return matchSearch && matchStatus;
-      }).toList();
-    });
-  }
-
   /// Search handler
   void _onSearchChanged(String query) {
     setState(() {
       _searchQuery = query;
     });
-    _loadUsers(); // Reload from API dengan search query
+    _loadUsers();
   }
 
   /// Status filter handler
@@ -103,13 +85,43 @@ class _UserListPageState extends State<UserListPage> {
       setState(() {
         _statusFilter = value;
       });
-      _loadUsers(); // Reload from API dengan filter
+      _loadUsers();
     }
   }
 
   /// Refresh handler (Pull to refresh)
   Future<void> _onRefresh() async {
     await _loadUsers();
+  }
+
+  /// Navigate to create user page
+  void _navigateToCreateUser() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const UserFormPage(),
+      ),
+    );
+
+    // Reload if user was created
+    if (result == true) {
+      _loadUsers();
+    }
+  }
+
+  /// Navigate to user detail page
+  void _navigateToUserDetail(User user) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserDetailPage(user: user),
+      ),
+    );
+
+    // Reload if user was updated or deleted
+    if (result == true) {
+      _loadUsers();
+    }
   }
 
   @override
@@ -135,14 +147,11 @@ class _UserListPageState extends State<UserListPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // TODO: Navigate to Create User Page
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Create User - Coming Soon')),
-          );
-        },
+        onPressed: _navigateToCreateUser,
         icon: const Icon(Icons.add),
         label: const Text('Add User'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
       ),
     );
   }
@@ -455,21 +464,11 @@ class _UserListPageState extends State<UserListPage> {
         // Actions
         trailing: IconButton(
           icon: const Icon(Icons.arrow_forward_ios),
-          onPressed: () {
-            // TODO: Navigate to User Detail Page
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('View details: ${user.username}')),
-            );
-          },
+          onPressed: () => _navigateToUserDetail(user),
         ),
 
         // On Tap
-        onTap: () {
-          // TODO: Navigate to User Detail Page
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Tapped on: ${user.username}')),
-          );
-        },
+        onTap: () => _navigateToUserDetail(user),
       ),
     );
   }

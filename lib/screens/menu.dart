@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'dart:async';
 import 'package:lapangin/screens/venue/venue_detail.dart';
 import 'package:lapangin/screens/user_admin/user_list_page.dart';
+import 'package:lapangin/screens/user_admin/profile_page.dart';
 
 Future<List<VenueEntry>> fetchRecommendedVenues(CookieRequest request) async {
   final response = await request.get(
@@ -191,7 +192,7 @@ class _MyHomePageState extends State<MyHomePage> {
         currentBody = const BookingHistoryPage();
         break;
       case 3:
-        currentBody = const SignOutPlaceholder(); // TODO: Profile
+        currentBody = const ProfilePage();
         break;
       default:
         currentBody = const HomePage();
@@ -201,6 +202,19 @@ class _MyHomePageState extends State<MyHomePage> {
       backgroundColor: Colors.white,
       body: currentBody,
       bottomNavigationBar: _buildCustomBottomNav(),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const UserListPage(),
+            ),
+          );
+        },
+        icon: const Icon(Icons.people),
+        label: const Text('User Management'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
     );
   }
 }
