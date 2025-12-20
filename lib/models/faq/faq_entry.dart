@@ -18,9 +18,9 @@ class FaqEntry {
     });
 
     factory FaqEntry.fromJson(Map<String, dynamic> json) => FaqEntry(
-        model: json["model"] ?? "",
-        pk: json["pk"]?.toString() ?? "",
-        fields: Fields.fromJson(json["fields"] ?? {}),
+        model: json["model"],
+        pk: json["pk"].toString(),
+        fields: Fields.fromJson(json["fields"]),
     );
 
     Map<String, dynamic> toJson() => {
@@ -48,12 +48,12 @@ class Fields {
     });
 
     factory Fields.fromJson(Map<String, dynamic> json) => Fields(
-        question: json["question"] ?? "",
-        answer: json["answer"] ?? "",
-        category: json["category"] ?? "",
+        question: json["question"],
+        answer: json["answer"],
+        category: json["category"],
         createdBy: json["created_by"],
-        createdAt: DateTime.parse(json["created_at"] ?? DateTime.now().toIso8601String()),
-        updatedAt: DateTime.parse(json["updated_at"] ?? DateTime.now().toIso8601String()),
+        createdAt: DateTime.parse(json["created_at"]),
+        updatedAt: DateTime.parse(json["updated_at"]),
     );
 
     Map<String, dynamic> toJson() => {
