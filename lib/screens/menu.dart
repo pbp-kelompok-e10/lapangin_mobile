@@ -213,12 +213,33 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   Future<List<VenueEntry>>? _recommendedVenuesFuture;
+  bool _noConnection = false;
 
   @override
   void initState() {
     super.initState();
+    _loadRecommendedVenues();
+  }
+
+  void _loadRecommendedVenues() {
     final request = context.read<CookieRequest>();
-    _recommendedVenuesFuture = fetchRecommendedVenues(request);
+    setState(() {
+      _noConnection = false;
+      _recommendedVenuesFuture = fetchRecommendedVenues(request).catchError((
+        e,
+      ) {
+        final errorString = e.toString().toLowerCase();
+        if (errorString.contains('socketexception') ||
+            errorString.contains('handshakeexception') ||
+            errorString.contains('connection') ||
+            errorString.contains('failed host lookup')) {
+          setState(() {
+            _noConnection = true;
+          });
+        }
+        throw e;
+      });
+    });
   }
 
   void _navigateToVenueList() {
@@ -231,6 +252,68 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // No internet connection state
+    if (_noConnection) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.wifi_off_rounded,
+                size: 80,
+                color: Colors.grey.shade400,
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Tidak Ada Koneksi Internet',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Poppins',
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Periksa koneksi internet Anda dan coba lagi.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                  fontFamily: 'Poppins',
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton.icon(
+                onPressed: _loadRecommendedVenues,
+                icon: const Icon(Icons.refresh),
+                label: const Text(
+                  'Coba Lagi',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0062FF),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Column(

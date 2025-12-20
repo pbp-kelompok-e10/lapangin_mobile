@@ -20,6 +20,7 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isConfirmPasswordVisible = false;
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
+  bool _noConnection = false;
 
   @override
   void dispose() {
@@ -37,6 +38,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     setState(() {
       _isLoading = true;
+      _noConnection = false;
     });
 
     final request = context.read<CookieRequest>();
@@ -83,16 +85,9 @@ class _RegisterPageState extends State<RegisterPage> {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: Text(
-                'Terjadi kesalahan jaringan: $e',
-                style: const TextStyle(fontFamily: "Poppins"),
-              ),
-            ),
-          );
+        setState(() {
+          _noConnection = true;
+        });
       }
     } finally {
       if (context.mounted) {
@@ -151,6 +146,75 @@ class _RegisterPageState extends State<RegisterPage> {
         focusedBorder: const OutlineInputBorder(
           borderSide: BorderSide(color: primaryColor, width: 1.0),
           borderRadius: BorderRadius.all(Radius.circular(8.0)),
+        ),
+      );
+    }
+
+    // No internet connection state
+    if (_noConnection) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.wifi_off_rounded,
+                  size: 80,
+                  color: Colors.grey.shade400,
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Tidak Ada Koneksi Internet',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Poppins',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Periksa koneksi internet Anda dan coba lagi.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                    fontFamily: 'Poppins',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _noConnection = false;
+                    });
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text(
+                    'Coba Lagi',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0062FF),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       );
     }
