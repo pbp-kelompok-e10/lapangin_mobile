@@ -55,7 +55,7 @@ class _FaqListPageState extends State<FaqListPage> {
     return listFaq;
   }
 
-  Future<void> deleteFaq(CookieRequest request, int faqId) async {
+  Future<void> deleteFaq(CookieRequest request, String faqId) async {
     const String baseUrl =
         'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id';
 
@@ -72,7 +72,7 @@ class _FaqListPageState extends State<FaqListPage> {
             backgroundColor: Colors.green,
           ),
         );
-        setState(() {}); // Refresh list
+        setState(() {}); 
       }
     }
   }
@@ -102,7 +102,7 @@ class _FaqListPageState extends State<FaqListPage> {
         children: [
           const SizedBox(height: 8),
 
-          // Category Pills (Filter)
+          // Category Pil
           Container(
             height: 50,
             padding: const EdgeInsets.symmetric(horizontal: 16),
