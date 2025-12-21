@@ -387,76 +387,82 @@ class _VenuesPageState extends State<VenuesPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // 1. DROPDOWN
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const ImageIcon(
-                          AssetImage("assets/images/icon/venue_sort_icon.png"),
-                          size: 24.0,
-                        ),
-                        const SizedBox(width: 8),
-                        DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: sortBy,
-                            isDense: true,
-                            style: const TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 14,
-                              color: Color(0xFF737373),
+                  Flexible(
+                    flex: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const ImageIcon(
+                            AssetImage(
+                              "assets/images/icon/venue_sort_icon.png",
                             ),
-                            items: sortOptions.map((String option) {
-                              return DropdownMenuItem<String>(
-                                value: option,
-                                child: Text(option),
-                              );
-                            }).toList(),
-                            onChanged: (String? newValue) {
-                              if (newValue != null) {
-                                setState(() {
-                                  sortBy = newValue;
-                                });
-                              }
-                            },
+                            size: 24.0,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: sortBy,
+                              isDense: true,
+                              style: const TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 14,
+                                color: Color(0xFF737373),
+                              ),
+                              items: sortOptions.map((String option) {
+                                return DropdownMenuItem<String>(
+                                  value: option,
+                                  child: Text(option),
+                                );
+                              }).toList(),
+                              onChanged: (String? newValue) {
+                                if (newValue != null) {
+                                  setState(() {
+                                    sortBy = newValue;
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
                   // 2. CREATE VENUE BUTTON
                   if (_canCreateVenue)
-                    ElevatedButton.icon(
-                      onPressed: _navigateToCreateVenue,
-                      icon: const Icon(Icons.add, size: 20),
-                      label: const Text(
-                        'Tambah Venue',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
+                    Flexible(
+                      flex: 0,
+                      child: ElevatedButton.icon(
+                        onPressed: _navigateToCreateVenue,
+                        icon: const Icon(Icons.add, size: 20),
+                        label: const Text(
+                          'Tambah Venue',
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0062FF),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0062FF),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                       ),
                     ),

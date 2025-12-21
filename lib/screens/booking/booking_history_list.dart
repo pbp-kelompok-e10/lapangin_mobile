@@ -330,50 +330,59 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
 
   Widget _buildNoConnectionState() {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.wifi_off_rounded, size: 80, color: Colors.grey[400]),
-            const SizedBox(height: 24),
-            Text(
-              'Tidak Ada Koneksi Internet',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Periksa koneksi internet Anda dan coba lagi.',
-              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () {
-                setState(() {
-                  _bookingHistoryFuture = _fetchBookingHistory();
-                });
-              },
-              icon: const Icon(Icons.refresh),
-              label: const Text('Coba Lagi'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 14,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                Icon(Icons.wifi_off_rounded, size: 80, color: Colors.grey[400]),
+                const SizedBox(height: 24),
+                Text(
+                  'Tidak Ada Koneksi Internet',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[700],
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                const SizedBox(height: 12),
+                Text(
+                  'Periksa koneksi internet Anda dan coba lagi.',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                  textAlign: TextAlign.center,
                 ),
-              ),
+                const SizedBox(height: 32),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _bookingHistoryFuture = _fetchBookingHistory();
+                    });
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Coba Lagi'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -701,22 +710,8 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
                         children: [
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: () async {
-                                final result = await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        CreateBookingPage(venueId: venueId),
-                                  ),
-                                );
-                                // Refresh list if booking was created
-                                if (result == true) {
-                                  setState(() {
-                                    _bookingHistoryFuture =
-                                        _fetchBookingHistory();
-                                  });
-                                }
-                              },
+                              onPressed: () =>
+                                  _showEditDateDialog(context, booking),
                               icon: const Icon(Icons.edit_calendar, size: 18),
                               label: const Text('Ubah Tanggal'),
                               style: OutlinedButton.styleFrom(

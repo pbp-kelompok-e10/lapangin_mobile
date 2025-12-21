@@ -73,8 +73,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
       if (response != null && response is Map<String, dynamic>) {
         setState(() {
-          _isAdmin = response['is_staff'] == true ||
-              response['is_superuser'] == true;
+          _isAdmin =
+              response['is_staff'] == true || response['is_superuser'] == true;
           _isLoadingProfile = false;
         });
       } else {
@@ -234,20 +234,20 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: _isLoadingProfile
           ? null
           : (_isAdmin
-          ? FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const UserListPage(),
-            ),
-          );
-        },
-        icon: const Icon(Icons.people),
-        label: const Text('User Management'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      )
-          : null),
+                ? FloatingActionButton.extended(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const UserListPage(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.people),
+                    label: const Text('User Management'),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                  )
+                : null),
     );
   }
 }
@@ -397,60 +397,70 @@ class _HomePageState extends State<HomePage> {
     }
 
     if (_noConnection) {
-      return Container(
-        padding: const EdgeInsets.all(24.0),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey.shade400),
-            const SizedBox(height: 12),
-            const Text(
-              'Tidak Ada Koneksi Internet',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Poppins',
-              ),
-              textAlign: TextAlign.center,
+      return SizedBox(
+        height: 220,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.all(24.0),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Tidak dapat memuat rekomendasi venue',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-                fontFamily: 'Poppins',
-              ),
-              textAlign: TextAlign.center,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.wifi_off_rounded,
+                  size: 48,
+                  color: Colors.grey.shade400,
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Tidak Ada Koneksi Internet',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Poppins',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Tidak dapat memuat rekomendasi venue',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                    fontFamily: 'Poppins',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: _loadRecommendedVenues,
+                  icon: const Icon(Icons.refresh, size: 18),
+                  label: const Text(
+                    'Coba Lagi',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0062FF),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: _loadRecommendedVenues,
-              icon: const Icon(Icons.refresh, size: 18),
-              label: const Text(
-                'Coba Lagi',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0062FF),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       );
     }
@@ -617,7 +627,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
             _banners.length,
-                (index) => Container(
+            (index) => Container(
               margin: const EdgeInsets.symmetric(horizontal: 4.0),
               width: 8.0,
               height: 8.0,
