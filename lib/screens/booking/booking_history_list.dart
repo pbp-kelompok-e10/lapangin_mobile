@@ -258,45 +258,72 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: const Text(
-          'Riwayat Booking',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          setState(() {
-            _bookingHistoryFuture = _fetchBookingHistory();
-          });
-        },
-        child: _noConnection
-            ? _buildNoConnectionState()
-            : FutureBuilder<List<dynamic>>(
-                future: _bookingHistoryFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return _buildErrorState(snapshot.error.toString());
-                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return _buildEmptyState();
-                  }
-
-                  final bookings = snapshot.data!;
-                  return ListView.builder(
-                    padding: const EdgeInsets.all(16.0),
-                    itemCount: bookings.length,
-                    itemBuilder: (context, index) {
-                      final booking = bookings[index];
-                      return _buildBookingCard(booking);
-                    },
-                  );
-                },
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            setState(() {
+              _bookingHistoryFuture = _fetchBookingHistory();
+            });
+          },
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Riwayat Booking',
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
+              SliverFillRemaining(
+                hasScrollBody: true,
+                child: _noConnection
+                    ? _buildNoConnectionState()
+                    : FutureBuilder<List<dynamic>>(
+                        future: _bookingHistoryFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          } else if (snapshot.hasError) {
+                            return _buildErrorState(snapshot.error.toString());
+                          } else if (!snapshot.hasData ||
+                              snapshot.data!.isEmpty) {
+                            return _buildEmptyState();
+                          }
+
+                          final bookings = snapshot.data!;
+                          return ListView.builder(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 0,
+                            ),
+                            itemCount: bookings.length,
+                            itemBuilder: (context, index) {
+                              final booking = bookings[index];
+                              return _buildBookingCard(booking);
+                            },
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
