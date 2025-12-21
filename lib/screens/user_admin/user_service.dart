@@ -4,10 +4,6 @@ import 'package:lapangin/screens/user_admin/user.dart';
 import 'package:lapangin/config/api_config.dart';
 
 class UserService {
-  // Changed: Use 10.0.2.2 for Android emulator and removed trailing slash
-  static const String baseUrl =
-      'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id';
-
   final CookieRequest request;
 
   UserService(this.request);
