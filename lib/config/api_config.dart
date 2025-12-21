@@ -21,19 +21,19 @@ class ApiConfig {
   static String venueDetailUrl(String venueId) =>
       '$baseUrl/venues/api/detail/$venueId/';
   static String editVenueUrl(String venueId) =>
-      '$baseUrl/venues/api/edit/$venueId/';
+      '$baseUrl/venues/api/edit/$venueId';
   static String deleteVenueUrl(String venueId) =>
       '$baseUrl/venues/api/delete/$venueId/';
 
-  // Booking endpoints
-  static String get myBookingsUrl => '$baseUrl/booking/flutter/my-bookings/';
+  // Booking endpoints (Web API)
+  static String get myBookingsUrl => '$baseUrl/booking/api/history/';
   static String bookedDatesUrl(String venueId) =>
-      '$baseUrl/booking/flutter/booked-dates/$venueId/';
-  static String get createBookingUrl => '$baseUrl/booking/flutter/create/';
+      '$baseUrl/booking/api/get_booked/$venueId/';
+  static String get createBookingUrl => '$baseUrl/booking/api/create/';
   static String editBookingUrl(int bookingId) =>
-      '$baseUrl/booking/flutter/edit/$bookingId/';
+      '$baseUrl/booking/api/edit/$bookingId/';
   static String deleteBookingUrl(int bookingId) =>
-      '$baseUrl/booking/flutter/delete/$bookingId/';
+      '$baseUrl/booking/api/delete/$bookingId/';
 
   // FAQ endpoints
   static String get createFaqUrl => '$baseUrl/faq/create-flutter/';
@@ -43,4 +43,23 @@ class ApiConfig {
       '$baseUrl/faq/delete-flutter/$faqId/';
   static String faqListUrl(String venueId) =>
       '$baseUrl/faq/list-flutter/$venueId/';
+
+  // Profile endpoints
+  static String get profileUrl => '$baseUrl/user/api/profile/';
+  static String get updateProfileUrl => '$baseUrl/user/api/update-profile/';
+
+  // User Admin endpoints
+  static String userListUrl({String? search, String? status, int page = 1}) {
+    String url = '$baseUrl/user/api/list/?page=$page';
+    if (search != null && search.isNotEmpty) url += '&search=$search';
+    if (status != null && status.isNotEmpty) url += '&status=$status';
+    return url;
+  }
+
+  static String userDetailUrl(int userId) => '$baseUrl/user/detail/$userId/';
+  static String get createUserUrl => '$baseUrl/user/create/';
+  static String editUserUrl(int userId) => '$baseUrl/user/edit/$userId/';
+  static String toggleUserStatusUrl(int userId) =>
+      '$baseUrl/user/toggle-status/$userId/';
+  static String deleteUserUrl(int userId) => '$baseUrl/user/delete/$userId/';
 }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:lapangin/config/api_config.dart';
+import 'package:lapangin/screens/booking/create_booking_page.dart';
 import 'package:provider/provider.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:lapangin/helper/price_formatter.dart';
@@ -30,7 +31,6 @@ Future<VenueEntry> fetchVenueDetail(
   }
 }
 
-// Halaman Detail Venue
 class VenueDetailPage extends StatefulWidget {
   final String venueId;
 
@@ -88,13 +88,11 @@ class _VenueDetailPageState extends State<VenueDetailPage> {
     }
   }
 
-  // Helper untuk menampilkan gambar
   Widget _buildVenueImage(String imageUrl, BuildContext context) {
     const base64Header = 'data:image';
     Widget imageWidget;
     final double imageHeight = MediaQuery.of(context).size.height * 0.35;
 
-    // Logika menampilkan gambar (base64, network, atau asset)
     if (imageUrl.startsWith(base64Header)) {
       try {
         final parts = imageUrl.split(',');
@@ -140,96 +138,25 @@ class _VenueDetailPageState extends State<VenueDetailPage> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    if (_noConnection) {
-      return Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          title: const Text('Detail Venue'),
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          elevation: 0,
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.wifi_off_rounded,
-                  size: 80,
-                  color: Colors.grey.shade400,
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Tidak Ada Koneksi Internet',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Poppins',
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Periksa koneksi internet Anda dan coba lagi.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                    fontFamily: 'Poppins',
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton.icon(
-                  onPressed: _loadVenueDetail,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text(
-                    'Coba Lagi',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0062FF),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 14,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (_error != null) {
+    if (_noConnection || _error != null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Detail Venue')),
         body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Gagal memuat detail venue: $_error',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _loadVenueDetail,
-                  child: const Text('Coba Lagi'),
-                ),
-              ],
-            ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                _noConnection ? Icons.wifi_off : Icons.error,
+                size: 64,
+                color: Colors.grey,
+              ),
+              const SizedBox(height: 16),
+              Text(_noConnection ? "Tidak ada koneksi" : "Error: $_error"),
+              ElevatedButton(
+                onPressed: _loadVenueDetail,
+                child: const Text("Coba Lagi"),
+              ),
+            ],
           ),
         ),
       );
@@ -240,12 +167,18 @@ class _VenueDetailPageState extends State<VenueDetailPage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        // AppBar transparan di atas gambar
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
+        leading: CircleAvatar(
+          backgroundColor: Colors.black26,
+          child: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios_new,
+              color: Colors.white,
+              size: 18,
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
         ),
       ),
       body: Column(
@@ -255,15 +188,12 @@ class _VenueDetailPageState extends State<VenueDetailPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // BAGIAN GAMBAR
                   _buildVenueImage(venue.thumbnail, context),
-                  // BAGIAN DETAIL
                   VenueDetailBody(venue: venue),
                 ],
               ),
             ),
           ),
-          // BAGIAN FOOTER (HARGA & SEWA)
           VenueDetailFooter(venue: venue),
         ],
       ),
@@ -271,21 +201,64 @@ class _VenueDetailPageState extends State<VenueDetailPage> {
   }
 }
 
-// Body utama halaman detail (Nama, Deskripsi, Fasilitas, Aturan)
 class VenueDetailBody extends StatelessWidget {
   final VenueEntry venue;
 
   const VenueDetailBody({super.key, required this.venue});
 
+  // Fungsi Helper untuk mengubah string newline menjadi List Widget Bullet
+  List<Widget> _buildBulletList(String text) {
+    if (text.isEmpty) {
+      return [
+        const Text(
+          "Data tidak tersedia",
+          style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+        ),
+      ];
+    }
+    // Pisahkan string berdasarkan baris baru dan hapus baris kosong
+    List<String> lines = text
+        .split('\n')
+        .where((s) => s.trim().isNotEmpty)
+        .toList();
+
+    return lines.map((line) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "• ",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Color(0xFF0062FF),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                line.trim(),
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 16),
-          // LOKASI dan RATING
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -293,7 +266,6 @@ class VenueDetailBody extends StatelessWidget {
                 '${venue.city}, ${venue.country}',
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 14,
                   color: Colors.grey.shade600,
                   fontWeight: FontWeight.w500,
                 ),
@@ -301,22 +273,15 @@ class VenueDetailBody extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    venue.rating.toStringAsFixed(2),
-                    style: const TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    venue.rating.toStringAsFixed(1),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(width: 4),
                   const Icon(Icons.star, color: Colors.amber, size: 18),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 8),
-
-          // NAMA VENUE
           Text(
             venue.name,
             style: const TextStyle(
@@ -325,129 +290,72 @@ class VenueDetailBody extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
-
-          // DESKRIPSI
+          const SizedBox(height: 12),
+          const Text(
+            "Deskripsi",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          const SizedBox(height: 4),
           Text(
             venue.description.isEmpty
                 ? "Deskripsi tidak tersedia."
                 : venue.description,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 14,
-              color: Colors.grey.shade800,
-            ),
+            style: const TextStyle(color: Colors.black87, height: 1.5),
           ),
           const SizedBox(height: 24),
 
-          // FASILITAS VENUE
-          _buildFacilitiesExpansionTile(),
+          // LIST FASILITAS
+          _buildExpansionCard(
+            title: 'Fasilitas Venue',
+            icon: Icons.layers_outlined,
+            content: _buildBulletList(venue.facilities),
+          ),
           const SizedBox(height: 16),
 
-          // ATURAN VENUE (Dummy)
-          _buildRulesExpansionTile(),
-
-          // Bagian Ulasan (Review) telah dihapus/ditunda.
-          const SizedBox(
-            height: 100,
-          ), // Ruang agar konten tidak tertutup footer
+          // LIST ATURAN
+          _buildExpansionCard(
+            title: 'Aturan Venue',
+            icon: Icons.info_outline,
+            content: _buildBulletList(venue.rules),
+            isWarning: true,
+          ),
+          const SizedBox(height: 100),
         ],
       ),
     );
   }
 
-  // Widget untuk menampilkan daftar fasilitas
-  Widget _buildFacilitiesExpansionTile() {
+  Widget _buildExpansionCard({
+    required String title,
+    required IconData icon,
+    required List<Widget> content,
+    bool isWarning = false,
+  }) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: ExpansionTile(
         initiallyExpanded: true,
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16),
-        title: const Text(
-          'Fasilitas Venue',
-          style: TextStyle(
+        shape: const Border(), // Hilangkan border default expansion tile
+        leading: Icon(
+          icon,
+          color: isWarning ? Colors.orange : const Color(0xFF0062FF),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
             fontFamily: 'Poppins',
-            fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            fontSize: 16,
           ),
         ),
         children: [
-          // Tambahkan divider di dalam children jika ExpansionTile terbuka
-          const Divider(height: 1, thickness: 1, indent: 16, endIndent: 16),
-          Text(
-            venue.description.isEmpty
-                ? "Deskripsi tidak tersedia."
-                : venue.description,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 14,
-              color: Colors.grey.shade800,
-            ),
-          ),
-          const SizedBox(height: 8),
-        ],
-      ),
-    );
-  }
-
-  // Item Fasilitas
-  Widget _buildFacilityItem(IconData icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 0.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20, color: Colors.black54),
-          const SizedBox(width: 12),
-          Text(
-            text,
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 14,
-              color: Colors.black87,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Widget untuk menampilkan aturan venue
-  Widget _buildRulesExpansionTile() {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16),
-        title: const Text(
-          'Aturan Venue',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
-        children: [
-          const Divider(height: 1, thickness: 1, indent: 16, endIndent: 16),
+          const Divider(height: 1),
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Text(
-              venue.description.isEmpty
-                  ? 'Mohon baca aturan venue yang berlaku sebelum melakukan pemesanan.'
-                  : venue.description,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14,
-                color: Colors.black87,
-              ),
-            ),
+            child: Column(children: content),
           ),
         ],
       ),
@@ -455,207 +363,9 @@ class VenueDetailBody extends StatelessWidget {
   }
 }
 
-// Footer halaman detail (Harga dan Tombol Sewa)
-class VenueDetailFooter extends StatefulWidget {
+class VenueDetailFooter extends StatelessWidget {
   final VenueEntry venue;
-
   const VenueDetailFooter({super.key, required this.venue});
-
-  @override
-  State<VenueDetailFooter> createState() => _VenueDetailFooterState();
-}
-
-class _VenueDetailFooterState extends State<VenueDetailFooter> {
-  bool _isBooking = false;
-
-  Future<List<DateTime>> _fetchBookedDates() async {
-    try {
-      final request = context.read<CookieRequest>();
-      final response = await request.get(
-        ApiConfig.bookedDatesUrl(widget.venue.id),
-      );
-
-      if (response['status'] == true) {
-        final dates = response['data']['booked_dates'] as List;
-        return dates.map((d) => DateTime.parse(d)).toList();
-      }
-    } catch (e) {
-      // Return empty list if error
-    }
-    return [];
-  }
-
-  Future<void> _showBookingDialog() async {
-    // Fetch booked dates first
-    final bookedDates = await _fetchBookedDates();
-
-    if (!mounted) return;
-
-    final DateTime? selectedDate = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now().add(const Duration(days: 1)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      selectableDayPredicate: (DateTime date) {
-        // Can't select already booked dates
-        return !bookedDates.any(
-          (booked) =>
-              booked.year == date.year &&
-              booked.month == date.month &&
-              booked.day == date.day,
-        );
-      },
-      helpText: 'Pilih Tanggal Booking',
-      cancelText: 'Batal',
-      confirmText: 'Pilih',
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF0062FF),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (selectedDate == null || !mounted) return;
-
-    // Show confirmation dialog
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text(
-          'Konfirmasi Booking',
-          style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Venue: ${widget.venue.name}',
-              style: const TextStyle(fontFamily: 'Poppins', fontSize: 14),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Tanggal: ${_formatDate(selectedDate)}',
-              style: const TextStyle(fontFamily: 'Poppins', fontSize: 14),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Harga: Rp${formatRupiah(widget.venue.price)}',
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0062FF),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal', style: TextStyle(fontFamily: 'Poppins')),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0062FF),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text(
-              'Konfirmasi',
-              style: TextStyle(fontFamily: 'Poppins'),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true || !mounted) return;
-
-    // Submit booking
-    await _submitBooking(selectedDate);
-  }
-
-  Future<void> _submitBooking(DateTime date) async {
-    setState(() {
-      _isBooking = true;
-    });
-
-    try {
-      final request = context.read<CookieRequest>();
-      final response = await request.postJson(
-        ApiConfig.createBookingUrl,
-        jsonEncode({
-          'venue_id': widget.venue.id,
-          'booking_date': date.toIso8601String().split('T')[0],
-        }),
-      );
-
-      if (!mounted) return;
-
-      if (response['status'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message'] ?? 'Booking berhasil!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message'] ?? 'Gagal melakukan booking'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isBooking = false;
-        });
-      }
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    const months = [
-      'Januari',
-      'Februari',
-      'Maret',
-      'April',
-      'Mei',
-      'Juni',
-      'Juli',
-      'Agustus',
-      'September',
-      'Oktober',
-      'November',
-      'Desember',
-    ];
-    const days = [
-      'Senin',
-      'Selasa',
-      'Rabu',
-      'Kamis',
-      'Jumat',
-      'Sabtu',
-      'Minggu',
-    ];
-    return '${days[date.weekday - 1]}, ${date.day} ${months[date.month - 1]} ${date.year}';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -665,26 +375,23 @@ class _VenueDetailFooterState extends State<VenueDetailFooter> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
-            spreadRadius: 2,
-            blurRadius: 5,
+            color: Colors.black12,
+            blurRadius: 10,
             offset: const Offset(0, -3),
           ),
         ],
       ),
       child: SafeArea(
-        top: false,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // Harga
             Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Rp${formatRupiah(widget.venue.price)},-',
+                  'Rp${formatRupiah(venue.price)}',
                   style: const TextStyle(
-                    fontFamily: 'Poppins',
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
@@ -692,47 +399,35 @@ class _VenueDetailFooterState extends State<VenueDetailFooter> {
                 ),
                 const Text(
                   'per hari',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ],
             ),
-
-            // Tombol Sewa
             ElevatedButton(
-              onPressed: _isBooking ? null : _showBookingDialog,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0062FF),
-                disabledBackgroundColor: Colors.grey,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 64,
-                  vertical: 24,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (c) => CreateBookingPage(venueId: venue.id),
                 ),
               ),
-              child: _isBooking
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Text(
-                      'Sewa',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white,
-                      ),
-                    ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0062FF),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 48,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: const Text(
+                'Sewa',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
             ),
           ],
         ),

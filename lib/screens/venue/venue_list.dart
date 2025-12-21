@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:lapangin/config/api_config.dart';
 import 'package:lapangin/models/venue_entry.dart';
 import 'package:lapangin/screens/venue/edit_venue_form.dart';
-import 'package:lapangin/screens/booking/create_booking_page.dart';
 import 'package:lapangin/widgets/venue/venue_list_card.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
@@ -194,7 +193,9 @@ class _VenuesPageState extends State<VenuesPage> {
     try {
       final response = await request.post(url, {});
 
-      if (response is Map<String, dynamic> && response['success'] == true) {
+      if (response is Map<String, dynamic> &&
+          (response['success'] == true || response['status'] == 'success')) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(response['message'] ?? 'Venue berhasil dihapus.'),
@@ -203,6 +204,7 @@ class _VenuesPageState extends State<VenuesPage> {
         );
         _refreshVenueList();
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(response['message'] ?? 'Gagal menghapus venue.'),
@@ -211,6 +213,7 @@ class _VenuesPageState extends State<VenuesPage> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       // Error koneksi
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -631,28 +634,6 @@ class _VenuesPageState extends State<VenuesPage> {
                 canManage: _canCreateVenue,
                 onEdit: () => _navigateToEditVenue(venue),
                 onRemove: () => _removeVenue(venue),
-              ),
-            ),
-            // Adding the "Sewa" button below the card
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          CreateBookingPage(venueId: venue.id),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 44),
-                ),
-                child: const Text(
-                  'Sewa Sekarang',
-                  style: TextStyle(fontSize: 16),
-                ),
               ),
             ),
           ],

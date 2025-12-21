@@ -10,6 +10,8 @@ class VenueEntry {
   final String description;
   final String? ownerId;
   final double rating;
+  final String facilities;
+  final String rules;
 
   const VenueEntry({
     required this.id,
@@ -23,6 +25,8 @@ class VenueEntry {
     required this.description,
     this.ownerId,
     required this.rating,
+    required this.facilities,
+    required this.rules,
   });
 
   // ----------------------------------------------------
@@ -42,6 +46,8 @@ class VenueEntry {
       description: json['description'] ?? '',
       ownerId: json['owner'],
       rating: double.tryParse(json['rating'].toString()) ?? 0.0,
+      facilities: json['facilities'] ?? '',
+      rules: json['rules'] ?? '',
     );
   }
   // ----------------------------------------------------

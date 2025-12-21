@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:lapangin/screens/auth/login.dart';
 import 'package:lapangin/screens/user_admin/user_list_page.dart';
 import 'package:lapangin/screens/user_admin/edit_profile_page.dart';
+import 'package:lapangin/config/api_config.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -33,7 +34,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final request = context.read<CookieRequest>();
 
       // IMPORTANT: Use the correct URL format
-      final response = await request.get('http://10.0.2.2:8000/auth/profile/');
+      final response = await request.get(ApiConfig.profileUrl);
 
       print('📥 Profile API Response: $response'); // Debug log
 
@@ -89,7 +90,7 @@ class _ProfilePageState extends State<ProfilePage> {
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginPage()),
-                    (route) => false,
+                (route) => false,
               );
             },
             child: const Text('Login'),
@@ -103,19 +104,21 @@ class _ProfilePageState extends State<ProfilePage> {
     final request = context.read<CookieRequest>();
 
     try {
-      final response = await request.logout("http://10.0.2.2:8000/auth/logout/");
+      final response = await request.logout(ApiConfig.logoutUrl);
 
       if (!mounted) return;
 
       if (response['status'] == true || response['status'] == 'success') {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response["message"] ?? "Logged out successfully")),
+          SnackBar(
+            content: Text(response["message"] ?? "Logged out successfully"),
+          ),
         );
 
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const LoginPage()),
-              (route) => false,
+          (route) => false,
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -125,9 +128,9 @@ class _ProfilePageState extends State<ProfilePage> {
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
     }
   }
 
@@ -150,9 +153,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void _navigateToUserManagement() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const UserListPage(),
-      ),
+      MaterialPageRoute(builder: (context) => const UserListPage()),
     );
   }
 
@@ -203,7 +204,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const LoginPage()),
-                      (route) => false,
+                  (route) => false,
                 );
               },
               child: const Text('Back to Login'),
@@ -337,15 +338,25 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   const Text(
                     'Personal Information',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const Divider(),
-                  _buildInfoRow(Icons.email, 'Email', email.isNotEmpty ? email : 'Not set'),
-                  _buildInfoRow(Icons.phone, 'Phone', phone.isNotEmpty ? phone : 'Not set'),
-                  _buildInfoRow(Icons.home, 'Address', address.isNotEmpty ? address : 'Not set', maxLines: 3),
+                  _buildInfoRow(
+                    Icons.email,
+                    'Email',
+                    email.isNotEmpty ? email : 'Not set',
+                  ),
+                  _buildInfoRow(
+                    Icons.phone,
+                    'Phone',
+                    phone.isNotEmpty ? phone : 'Not set',
+                  ),
+                  _buildInfoRow(
+                    Icons.home,
+                    'Address',
+                    address.isNotEmpty ? address : 'Not set',
+                    maxLines: 3,
+                  ),
                 ],
               ),
             ),
@@ -359,7 +370,10 @@ class _ProfilePageState extends State<ProfilePage> {
               margin: const EdgeInsets.symmetric(horizontal: 16),
               elevation: 2,
               child: ListTile(
-                leading: const Icon(Icons.admin_panel_settings, color: Colors.blue),
+                leading: const Icon(
+                  Icons.admin_panel_settings,
+                  color: Colors.blue,
+                ),
                 title: const Text('User Management'),
                 subtitle: const Text('Manage all users'),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -381,7 +395,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Change Password - Coming Soon')),
+                      const SnackBar(
+                        content: Text('Change Password - Coming Soon'),
+                      ),
                     );
                   },
                 ),
@@ -392,7 +408,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Help & Support - Coming Soon')),
+                      const SnackBar(
+                        content: Text('Help & Support - Coming Soon'),
+                      ),
                     );
                   },
                 ),
@@ -459,7 +477,12 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value, {int maxLines = 1}) {
+  Widget _buildInfoRow(
+    IconData icon,
+    String label,
+    String value, {
+    int maxLines = 1,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
@@ -473,10 +496,7 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 4),
                 Text(

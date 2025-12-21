@@ -98,9 +98,7 @@ class _UserListPageState extends State<UserListPage> {
   void _navigateToCreateUser() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const UserFormPage(),
-      ),
+      MaterialPageRoute(builder: (context) => const UserFormPage()),
     );
 
     // Reload if user was created
@@ -113,9 +111,7 @@ class _UserListPageState extends State<UserListPage> {
   void _navigateToUserDetail(User user) async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => UserDetailPage(user: user),
-      ),
+      MaterialPageRoute(builder: (context) => UserDetailPage(user: user)),
     );
 
     // Reload if user was updated or deleted
@@ -141,9 +137,7 @@ class _UserListPageState extends State<UserListPage> {
           _buildUserStats(),
 
           // User List
-          Expanded(
-            child: _buildBody(),
-          ),
+          Expanded(child: _buildBody()),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -171,12 +165,12 @@ class _UserListPageState extends State<UserListPage> {
               prefixIcon: const Icon(Icons.search),
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
-                icon: const Icon(Icons.clear),
-                onPressed: () {
-                  _searchController.clear();
-                  _onSearchChanged('');
-                },
-              )
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        _onSearchChanged('');
+                      },
+                    )
                   : null,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -214,8 +208,14 @@ class _UserListPageState extends State<UserListPage> {
                   ),
                   items: const [
                     DropdownMenuItem(value: 'all', child: Text('All Users')),
-                    DropdownMenuItem(value: 'active', child: Text('Active Only')),
-                    DropdownMenuItem(value: 'inactive', child: Text('Inactive Only')),
+                    DropdownMenuItem(
+                      value: 'active',
+                      child: Text('Active Only'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'inactive',
+                      child: Text('Inactive Only'),
+                    ),
                   ],
                   onChanged: _onStatusFilterChanged,
                 ),
@@ -258,13 +258,7 @@ class _UserListPageState extends State<UserListPage> {
             color: color,
           ),
         ),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
       ],
     );
   }
@@ -293,10 +287,7 @@ class _UserListPageState extends State<UserListPage> {
           children: [
             const Icon(Icons.error_outline, size: 64, color: Colors.red),
             const SizedBox(height: 16),
-            Text(
-              'Error',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text('Error', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -377,10 +368,7 @@ class _UserListPageState extends State<UserListPage> {
         // User Info
         title: Text(
           user.name ?? user.username,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -410,7 +398,9 @@ class _UserListPageState extends State<UserListPage> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: user.isActive ? Colors.green[800] : Colors.red[800],
+                      color: user.isActive
+                          ? Colors.green[800]
+                          : Colors.red[800],
                     ),
                   ),
                 ),
