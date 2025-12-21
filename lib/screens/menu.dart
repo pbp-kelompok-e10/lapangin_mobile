@@ -56,8 +56,40 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
-
   String _searchQuery = '';
+  bool _isAdmin = false;
+  bool _isLoadingProfile = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAdminStatus();
+  }
+
+  Future<void> _checkAdminStatus() async {
+    try {
+      final request = context.read<CookieRequest>();
+      final response = await request.get(ApiConfig.profileUrl);
+
+      if (response != null && response is Map<String, dynamic>) {
+        setState(() {
+          _isAdmin = response['is_staff'] == true ||
+              response['is_superuser'] == true;
+          _isLoadingProfile = false;
+        });
+      } else {
+        setState(() {
+          _isAdmin = false;
+          _isLoadingProfile = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isAdmin = false;
+        _isLoadingProfile = false;
+      });
+    }
+  }
 
   void _onItemTapped(int index) async {
     if (index == 4) {
@@ -154,7 +186,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // 2. Tentukan widget body secara manual
     Widget currentBody;
 
     switch (_selectedIndex) {
@@ -200,17 +231,23 @@ class _MyHomePageState extends State<MyHomePage> {
       backgroundColor: Colors.white,
       body: currentBody,
       bottomNavigationBar: _buildCustomBottomNav(),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: _isLoadingProfile
+          ? null
+          : (_isAdmin
+          ? FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const UserListPage()),
+            MaterialPageRoute(
+              builder: (context) => const UserListPage(),
+            ),
           );
         },
         icon: const Icon(Icons.people),
         label: const Text('User Management'),
         backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
+      )
+          : null),
     );
   }
 }
@@ -504,17 +541,6 @@ class SignOutPlaceholder extends StatelessWidget {
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const UserListPage()),
-          );
-        },
-        icon: const Icon(Icons.people),
-        label: const Text('User Management'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
     );
   }
 }
@@ -603,7 +629,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
             _banners.length,
-            (index) => Container(
+                (index) => Container(
               margin: const EdgeInsets.symmetric(horizontal: 4.0),
               width: 8.0,
               height: 8.0,
