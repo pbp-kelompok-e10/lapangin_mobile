@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:lapangin/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -104,8 +105,7 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
 
                           // Use the pbp_django_auth request to make a post request
                           final response = await request.postJson(
-                            // Replace with your actual production URL
-                            "http://localhost:8000/booking/create/",
+                            ApiConfig.createBookingUrl,
                             jsonEncode(<String, dynamic>{
                               'venue_id': widget.venueId,
                               'booking_date': dateStr,
