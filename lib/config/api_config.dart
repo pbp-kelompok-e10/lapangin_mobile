@@ -5,7 +5,8 @@ class ApiConfig {
   static const String baseUrl = 'http://10.0.2.2:8000';
 
   // Production (PWS)
-  // static const String baseUrl = 'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id';
+  //static const String baseUrl =
+  //    'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id';
 
   // Auth endpoints
   static String get loginUrl => '$baseUrl/auth/login/';
