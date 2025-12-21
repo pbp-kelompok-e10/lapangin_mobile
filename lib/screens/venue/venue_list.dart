@@ -58,14 +58,11 @@ class _VenuesPageState extends State<VenuesPage> {
 
   late TextEditingController _searchController;
 
-  final List<String> locations = [
-    'Semua Lokasi',
-    'Kota Jakarta Pusat',
-    'Kota Jakarta Utara',
-    'Kota Jakarta Selatan',
-    'Kota Jakarta Barat',
-    'Kota Jakarta Timur',
-  ];
+  List<String> get locations {
+    final venues = _venues ?? [];
+    final cities = venues.map((v) => v.city).toSet().toList()..sort();
+    return ['Semua Lokasi', ...cities];
+  }
 
   final List<String> sortOptions = [
     'Harga Terendah',
