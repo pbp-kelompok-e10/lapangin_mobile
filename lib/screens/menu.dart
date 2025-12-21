@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lapangin/screens/auth/login.dart';
+import 'package:lapangin/screens/booking/booking_history_list.dart';
 import 'package:lapangin/screens/venue/venue_list.dart';
 import 'package:lapangin/widgets/utils/fast_navigation_card.dart';
 import 'package:lapangin/widgets/utils/promotion_banner.dart';
@@ -10,6 +11,8 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 import 'package:lapangin/screens/venue/venue_detail.dart';
+import 'package:lapangin/screens/user_admin/user_list_page.dart';
+import 'package:lapangin/screens/user_admin/profile_page.dart';
 import 'package:lapangin/screens/faq/faq_list.dart';
 
 Future<List<VenueEntry>> fetchRecommendedVenues(CookieRequest request) async {
@@ -187,10 +190,10 @@ class _MyHomePageState extends State<MyHomePage> {
         currentBody = VenuesPage(initialQuery: _searchQuery);
         break;
       case 2:
-        currentBody = const SignOutPlaceholder(); // TODO: History
+        currentBody = const BookingHistoryPage();
         break;
       case 3:
-        currentBody = const SignOutPlaceholder(); // TODO: Profile
+        currentBody = const ProfilePage();
         break;
       default:
         currentBody = const HomePage();
@@ -200,6 +203,19 @@ class _MyHomePageState extends State<MyHomePage> {
       backgroundColor: Colors.white,
       body: currentBody,
       bottomNavigationBar: _buildCustomBottomNav(),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const UserListPage(),
+            ),
+          );
+        },
+        icon: const Icon(Icons.people),
+        label: const Text('User Management'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
     );
   }
 }
@@ -468,8 +484,26 @@ class SignOutPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Proses Sign Out...', style: TextStyle(fontSize: 24)),
+    return Scaffold(
+      body: const Center(
+        child: Text(
+          'Welcome to Lapangin',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const UserListPage(),
+            ),
+          );
+        },
+        icon: const Icon(Icons.people),
+        label: const Text('User Management'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
     );
   }
 }
