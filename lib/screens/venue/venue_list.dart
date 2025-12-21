@@ -627,7 +627,12 @@ class _VenuesPageState extends State<VenuesPage> {
                   MaterialPageRoute(
                     builder: (context) => VenueDetailPage(venueId: venue.id),
                   ),
-                );
+                ).then((result) {
+                  // Refresh venue list to update rating if review was added/edited/deleted
+                  if (result == true) {
+                    _refreshVenueList();
+                  }
+                });
               },
               child: VenueListCard(
                 venue: venue,

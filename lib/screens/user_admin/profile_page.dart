@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lapangin/screens/faq/faq_list.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lapangin/screens/auth/login.dart';
@@ -33,9 +34,7 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       final request = context.read<CookieRequest>();
 
-      const String baseUrl =
-          'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id';
-      final response = await request.get('$baseUrl/user/api/profile/');
+      final response = await request.get(ApiConfig.profileUrl);
 
       print('📥 Profile API Response: $response'); // Debug log
 
@@ -105,9 +104,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final request = context.read<CookieRequest>();
 
     try {
-      final response = await request.logout(
-        "https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/auth/logout/",
-      );
+      final response = await request.logout(ApiConfig.logoutUrl);
 
       if (!mounted) return;
 
@@ -392,42 +389,19 @@ class _ProfilePageState extends State<ProfilePage> {
             elevation: 2,
             child: Column(
               children: [
-                ListTile(
-                  leading: const Icon(Icons.lock, color: Colors.orange),
-                  title: const Text('Change Password'),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Change Password - Coming Soon'),
-                      ),
-                    );
-                  },
-                ),
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.help, color: Colors.blue),
                   title: const Text('Help & Support'),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Help & Support - Coming Soon'),
-                      ),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => FaqListPage()),
                     );
                   },
                 ),
                 const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.info, color: Colors.green),
-                  title: const Text('About'),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('About - Coming Soon')),
-                    );
-                  },
-                ),
               ],
             ),
           ),

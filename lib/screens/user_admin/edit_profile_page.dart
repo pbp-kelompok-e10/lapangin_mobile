@@ -15,9 +15,6 @@ class EditProfilePage extends StatefulWidget {
 class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
 
-  // CHANGED: Use production URL
-  static const String baseUrl = 'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id';
-
   late TextEditingController _fullNameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
@@ -62,24 +59,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
     try {
       final request = context.read<CookieRequest>();
 
-<<<<<<< HEAD
       final response = await request.post(ApiConfig.updateProfileUrl, {
         'full_name': _fullNameController.text,
         'email': _emailController.text,
         'phone': _phoneController.text,
         'address': _addressController.text,
       });
-=======
-      final response = await request.post(
-        '$baseUrl/user/api/update-profile/',
-        {
-          'full_name': _fullNameController.text,
-          'email': _emailController.text,
-          'phone': _phoneController.text,
-          'address': _addressController.text,
-        },
-      );
->>>>>>> 297ad2dcdff3826bce3e44a3ac27b10392be96b9
 
       print('📤 Update Profile Response: $response');
 

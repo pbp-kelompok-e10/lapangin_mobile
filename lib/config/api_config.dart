@@ -62,4 +62,11 @@ class ApiConfig {
   static String toggleUserStatusUrl(int userId) =>
       '$baseUrl/user/toggle-status/$userId/';
   static String deleteUserUrl(int userId) => '$baseUrl/user/delete/$userId/';
+
+  // Review endpoints
+  static String reviewsUrl(String venueId) =>
+      '$baseUrl/review/reviews/$venueId';
+  static String get addReviewUrl => '$baseUrl/review/api/add/';
+  static String get deleteReviewUrl => '$baseUrl/review/api/delete/';
+  static String get editReviewUrl => '$baseUrl/review/api/edit/';
 }
