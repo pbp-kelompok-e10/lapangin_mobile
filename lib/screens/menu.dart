@@ -366,18 +366,6 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                 ),
-                SizedBox(width: 7),
-                Expanded(
-                  child: FastNavigationCard(
-                    imageUrl: "assets/images/menu3.jpg",
-                    icon: ImageIcon(
-                      AssetImage("assets/images/icon/review_home_icon.png"),
-                      color: Colors.white,
-                      size: 41.0,
-                    ),
-                    title: 'Leave a Review',
-                  ),
-                ),
               ],
             ),
           ),
