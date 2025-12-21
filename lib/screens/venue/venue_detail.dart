@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:lapangin/helper/price_formatter.dart';
 import 'package:lapangin/models/venue_entry.dart';
+import 'package:lapangin/models/review.dart';
+import 'package:lapangin/widgets/review/review_card.dart';
 
 Future<VenueEntry> fetchVenueDetail(
   CookieRequest request,
@@ -280,6 +282,13 @@ class VenueDetailBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final request = context.read<CookieRequest>();
+    final rawId = request.jsonData != null
+        ? (request.jsonData['id'] ?? request.jsonData['user_id'])
+        : null;
+    final int currentUserId = rawId != null ? int.tryParse(rawId.toString()) ?? 0 : 0;
+    final bool loggedIn = request.loggedIn == true;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
@@ -347,8 +356,12 @@ class VenueDetailBody extends StatelessWidget {
 
           // ATURAN VENUE (Dummy)
           _buildRulesExpansionTile(),
+          const SizedBox(height: 24),
 
-          // Bagian Ulasan (Review) telah dihapus/ditunda.
+          // Bagian Ulasan (Review)
+          ReviewSection(venueId: venue.id!, currentUserId: currentUserId),
+          const SizedBox(height: 24),
+
           const SizedBox(
             height: 100,
           ), // Ruang agar konten tidak tertutup footer
@@ -536,4 +549,558 @@ class VenueDetailFooter extends StatelessWidget {
       ),
     );
   }
+}
+
+class ReviewSection extends StatefulWidget {
+  final String venueId;
+  final int currentUserId;
+
+  const ReviewSection({
+    super.key,
+    required this.venueId,
+    required this.currentUserId,
+  });
+
+  @override
+  State<ReviewSection> createState() => _ReviewSectionState();
+}
+
+class _ReviewSectionState extends State<ReviewSection> {
+  bool isLoading = true;
+  List<Map<String, dynamic>> reviews = [];
+  int currentUserId = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchReviews();
+  }
+
+  Future<void> fetchReviews() async {
+    final request = context.read<CookieRequest>();
+
+    final response = await request.get(
+      'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/review/reviews/${widget.venueId}',
+    );
+
+    setState(() {
+      reviews = List<Map<String, dynamic>>.from(response['reviews']);
+      currentUserId = response['current_user_id'] ?? 0;
+      isLoading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "Ulasan",
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => showReviewModal(context, venueId: widget.venueId, onSuccess: fetchReviews),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0062FF),
+              ),
+              child: const Text(
+                "Berikan Ulasan",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontFamily: 'Poppins',
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 12),
+
+        if (reviews.isEmpty)
+          const Text(
+            "Belum ada ulasan.",
+            style: TextStyle(fontFamily: 'Poppins'),
+          ),
+
+        ...reviews.map((review) {
+          final isOwner = review["user_id"] == currentUserId;
+
+          return ReviewCard(
+            review: review,
+            isOwner: isOwner,
+
+            onEdit: () {
+              selectedRating.value = review["rating"] is int
+                  ? review["rating"]
+                  : double.tryParse(review["rating"].toString())?.round() ?? 0;
+
+              showEditReviewModal(
+                context,
+                venueId: widget.venueId,
+                initialComment: review["comment"] ?? "",
+                onSuccess: fetchReviews,
+              );
+            },
+
+            onDelete: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (_) => AlertDialog(
+                  title: const Text(
+                    "Hapus Review",
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  content: const Text(
+                    "Yakin ingin menghapus review ini?",
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text(
+                        "Batal",
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 14,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text(
+                        "Hapus",
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 14,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirm == true) {
+                await deleteReview(
+                  context: context,
+                  venueId: widget.venueId,
+                );
+                fetchReviews();
+              }
+            },
+          );
+        }),
+      ],
+    );
+  }
+}
+
+final selectedRating = ValueNotifier<int>(0);
+
+void showReviewModal(BuildContext context, {
+  required String venueId,
+  required VoidCallback onSuccess,
+}) {
+  final TextEditingController reviewController = TextEditingController();
+  final ValueNotifier<int> selectedRating = ValueNotifier<int>(0);
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // HEADER
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Berikan Ulasanmu",
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // STAR RATING
+                  ValueListenableBuilder<int>(
+                    valueListenable: selectedRating,
+                    builder: (context, value, _) {
+                      return Row(
+                        children: List.generate(5, (index) {
+                          return IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            icon: Icon(
+                              index < value ? Icons.star : Icons.star_border,
+                              color: Colors.amber,
+                              size: 32,
+                            ),
+                            onPressed: () {
+                              selectedRating.value = index + 1;
+                            },
+                          );
+                        }),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // LABEL
+                  const Text(
+                    "Tulisan Ulasan",
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // TEXTFIELD
+                  TextField(
+                    controller: reviewController,
+                    maxLines: 4,
+                    onChanged: (_) {
+                      setState(() {}); // untuk enable/disable button
+                    },
+                    decoration: InputDecoration(
+                      hintText: "Tulis disini...",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Colors.grey, width: 1),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFF0062FF), width: 1.5),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // BUTTON ACTIONS
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text(
+                          "Batal",
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      ValueListenableBuilder<int>(
+                        valueListenable: selectedRating,
+                        builder: (context, value, _) {
+                          return ElevatedButton(
+                            onPressed: value == 0 ||
+                                    reviewController.text.trim().isEmpty
+                                ? null
+                                : () async {
+                                    await submitReview(
+                                      context: context,
+                                      venueId: venueId,
+                                      rating: value,
+                                      comment: reviewController.text.trim(),
+                                    );
+                                    Navigator.pop(context);
+                                    onSuccess();
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0062FF),
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text(
+                              "Kirim Review",
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+Future<void> submitReview({
+  required BuildContext context,
+  required String venueId,
+  required int rating,
+  required String comment,
+}) async {
+  final request = context.read<CookieRequest>();
+
+  final response = await request.post(
+    'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/review/api/add/',
+    {
+      'venue_id': venueId,
+      'rating': rating.toString(),
+      'comment': comment,
+    },
+  );
+
+  if (response['success'] != true) {
+    throw Exception(response['message'] ?? 'Gagal mengirim review');
+  }
+}
+
+Future<void> deleteReview({
+  required BuildContext context,
+  required String venueId,
+}) async {
+  final request = context.read<CookieRequest>();
+
+  final response = await request.post(
+    'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/review/api/delete/',
+    {
+      'venue_id': venueId,
+    },
+  );
+
+  if (response['success'] != true) {
+    throw Exception(response['message'] ?? 'Gagal menghapus review');
+  }
+}
+
+Future<void> editReview({
+  required BuildContext context,
+  required String venueId,
+  required int rating,
+  required String comment,
+}) async {
+  final request = context.read<CookieRequest>();
+
+  final response = await request.post(
+    'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/review/api/edit/',
+    {
+      'venue_id': venueId,
+      'rating': rating.toString(),
+      'comment': comment,
+    },
+  );
+
+  if (response['success'] != true) {
+    throw Exception(response['message'] ?? 'Gagal edit review');
+  }
+}
+
+void showEditReviewModal(
+  BuildContext context, {
+  required String venueId,
+  required String initialComment,
+  required VoidCallback onSuccess,
+}) {
+  final TextEditingController controller =
+      TextEditingController(text: initialComment);
+  final ValueNotifier<int> selectedRating = ValueNotifier<int>(0);
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // HEADER
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Edit Ulasan",
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // STAR RATING
+                  ValueListenableBuilder<int>(
+                    valueListenable: selectedRating,
+                    builder: (context, value, _) {
+                      return Row(
+                        children: List.generate(5, (i) {
+                          return IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            icon: Icon(
+                              i < value ? Icons.star : Icons.star_border,
+                              color: Colors.amber,
+                              size: 32,
+                            ),
+                            onPressed: () {
+                              selectedRating.value = i + 1;
+                            },
+                          );
+                        }),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // TEXTFIELD
+                  TextField(
+                    controller: controller,
+                    maxLines: 4,
+                    onChanged: (_) {
+                      setState(() {}); // untuk enable/disable button
+                    },
+                    decoration: InputDecoration(
+                      hintText: "Tulis disini...",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Colors.grey, width: 1),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFF0062FF), width: 1.5),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // BUTTONS
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text(
+                          "Batal",
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      ValueListenableBuilder<int>(
+                        valueListenable: selectedRating,
+                        builder: (context, value, _) {
+                          return ElevatedButton(
+                            onPressed: value == 0 || controller.text.trim().isEmpty
+                                ? null
+                                : () async {
+                                    await editReview(
+                                      context: context,
+                                      venueId: venueId,
+                                      rating: value,
+                                      comment: controller.text.trim(),
+                                    );
+                                    Navigator.pop(context);
+                                    onSuccess();
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0062FF),
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text(
+                              "Simpan",
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
 }
