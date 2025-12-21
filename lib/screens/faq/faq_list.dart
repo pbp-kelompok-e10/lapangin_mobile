@@ -15,6 +15,7 @@ class FaqListPage extends StatefulWidget {
 
 class _FaqListPageState extends State<FaqListPage> {
   String selectedCategory = 'Semua';
+  bool _noConnection = false;
 
   final List<Map<String, String>> categories = [
     {'code': 'all', 'name': 'Semua'},
@@ -32,6 +33,7 @@ class _FaqListPageState extends State<FaqListPage> {
   }
 
   Future<List<FaqEntry>> fetchFaq(CookieRequest request) async {
+    try {
     final String baseUrl = ApiConfig.baseUrl;
 
     String categoryCode = categories.firstWhere(
@@ -45,13 +47,19 @@ class _FaqListPageState extends State<FaqListPage> {
 
     final response = await request.get(url);
 
+    _noConnection = false;
+
     List<FaqEntry> listFaq = [];
     for (var d in response) {
       if (d != null) {
         listFaq.add(FaqEntry.fromJson(d));
+        }
       }
+      return listFaq;
+    } catch (e) {
+      _noConnection = true;
+      return [];
     }
-    return listFaq;
   }
 
   Future<void> deleteFaq(CookieRequest request, String faqId) async {
@@ -190,6 +198,51 @@ class _FaqListPageState extends State<FaqListPage> {
             child: FutureBuilder(
               future: fetchFaq(request),
               builder: (context, AsyncSnapshot snapshot) {
+                if (_noConnection) {
+                  return SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.5,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.wifi_off_rounded,
+                            size: 64,
+                            color: Colors.grey.shade400,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Tidak Ada Koneksi Internet',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Poppins',
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Tidak dapat memuat daftar FAQ',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                              fontFamily: 'Poppins',
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 24),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              setState(() {});
+                            },
+                            icon: const Icon(Icons.refresh, size: 18),
+                            label: const Text('Coba Lagi'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
                     child: CircularProgressIndicator(color: Color(0xFF003C9C)),
