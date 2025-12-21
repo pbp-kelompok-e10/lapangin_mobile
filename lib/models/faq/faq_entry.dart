@@ -1,5 +1,4 @@
 
-//     final faqEntry = faqEntryFromJson(jsonString);
 
 import 'dart:convert';
 
@@ -9,7 +8,7 @@ String faqEntryToJson(List<FaqEntry> data) => json.encode(List<dynamic>.from(dat
 
 class FaqEntry {
     String model;
-    int pk;
+    String pk;
     Fields fields;
 
     FaqEntry({
@@ -20,7 +19,7 @@ class FaqEntry {
 
     factory FaqEntry.fromJson(Map<String, dynamic> json) => FaqEntry(
         model: json["model"],
-        pk: json["pk"],
+        pk: json["pk"].toString(),
         fields: Fields.fromJson(json["fields"]),
     );
 

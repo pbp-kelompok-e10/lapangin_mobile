@@ -40,15 +40,14 @@ class _FaqCardState extends State<FaqCard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFD4D4D4)),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -72,7 +71,7 @@ class _FaqCardState extends State<FaqCard> {
                       widget.faq.fields.question,
                       style: const TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w700,
                         color: Color(0xFF171717),
                       ),
                     ),
@@ -92,7 +91,7 @@ class _FaqCardState extends State<FaqCard> {
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                   ],
                   // Expand icon
                   AnimatedRotation(
@@ -101,6 +100,7 @@ class _FaqCardState extends State<FaqCard> {
                     child: const Icon(
                       Icons.keyboard_arrow_down,
                       color: Color(0xFF27272A),
+                      size: 24,
                     ),
                   ),
                 ],
@@ -117,7 +117,7 @@ class _FaqCardState extends State<FaqCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Divider(height: 1),
+                  const Divider(height: 1, thickness: 1),
                   const SizedBox(height: 12),
                   // Category badge
                   Container(

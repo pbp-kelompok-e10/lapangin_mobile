@@ -10,7 +10,7 @@ Future<VenueEntry> fetchVenueDetail(
   String venueId,
 ) async {
   final response = await request.get(
-    'http://localhost:8000/venues/api/detail/$venueId/',
+    'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/detail/$venueId/',
   );
 
   if (response is Map<String, dynamic> &&
@@ -45,6 +45,7 @@ class _VenueDetailPageState extends State<VenueDetailPage> {
   VenueEntry? _venue;
   bool _isLoading = true;
   String? _error;
+  bool _noConnection = false;
 
   @override
   void initState() {
@@ -56,6 +57,7 @@ class _VenueDetailPageState extends State<VenueDetailPage> {
     setState(() {
       _isLoading = true;
       _error = null;
+      _noConnection = false;
     });
 
     try {
@@ -66,12 +68,24 @@ class _VenueDetailPageState extends State<VenueDetailPage> {
         _isLoading = false;
       });
     } catch (e) {
-      setState(() {
-        _error = e.toString().contains('Exception:')
-            ? e.toString().split('Exception: ')[1]
-            : e.toString();
-        _isLoading = false;
-      });
+      final errorString = e.toString().toLowerCase();
+      if (errorString.contains('socketexception') ||
+          errorString.contains('handshakeexception') ||
+          errorString.contains('connection') ||
+          errorString.contains('network') ||
+          errorString.contains('failed host lookup')) {
+        setState(() {
+          _noConnection = true;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _error = e.toString().contains('Exception:')
+              ? e.toString().split('Exception: ')[1]
+              : e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -125,6 +139,76 @@ class _VenueDetailPageState extends State<VenueDetailPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_noConnection) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: const Text('Detail Venue'),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.wifi_off_rounded,
+                  size: 80,
+                  color: Colors.grey.shade400,
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Tidak Ada Koneksi Internet',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Poppins',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Periksa koneksi internet Anda dan coba lagi.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                    fontFamily: 'Poppins',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton.icon(
+                  onPressed: _loadVenueDetail,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text(
+                    'Coba Lagi',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0062FF),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     if (_error != null) {

@@ -19,6 +19,9 @@ class VenueCard extends StatelessWidget {
     required this.imageUrl,
   });
 
+  // Tinggi Gambar Ditetapkan Secara Konstan
+  static const double imageDisplayHeight = 120.0;
+
   Widget _buildVenueImage(String imageUrl) {
     const base64Header = 'data:image';
 
@@ -30,7 +33,7 @@ class VenueCard extends StatelessWidget {
           return Image.memory(
             bytes,
             fit: BoxFit.cover,
-            height: 120,
+            height: imageDisplayHeight, // Menggunakan konstanta
             width: double.infinity,
           );
         } catch (e) {
@@ -41,7 +44,7 @@ class VenueCard extends StatelessWidget {
       return Image.network(
         imageUrl,
         fit: BoxFit.cover,
-        height: 180,
+        height: imageDisplayHeight, // Menggunakan konstanta
         width: double.infinity,
         loadingBuilder: (c, child, loadingProgress) {
           if (loadingProgress == null) return child;
@@ -56,96 +59,138 @@ class VenueCard extends StatelessWidget {
       return Image.asset(
         imageUrl,
         fit: BoxFit.cover,
-        height: 180,
+        height: imageDisplayHeight, // Menggunakan konstanta
         width: double.infinity,
         errorBuilder: (c, o, s) => const Center(child: Icon(Icons.error)),
       );
     }
 
-    return Container(height: 300, color: Colors.grey.shade300);
+    return Container(height: imageDisplayHeight, color: Colors.grey.shade300);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 0),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ClipRRect(
-              borderRadius: const BorderRadius.all(Radius.circular(10)),
-              child: Container(
-                height: 180,
-                width: double.infinity,
-                child: _buildVenueImage(imageUrl),
+    // Tinggi yang tersisa untuk Detail setelah Gambar & Padding Gambar:
+    // Total Height (246) - Padding Atas/Bawah Gambar (8*2) - Tinggi Gambar (120)
+    // = 246 - 16 - 120 = 110.0 piksel yang tersedia untuk Detail.
+
+    return SizedBox(
+      width: 160,
+      height: 246, // Tinggi tetap 246px
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.3),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 0),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          // Menggunakan MainAxisSize.max untuk memastikan Column mengambil seluruh tinggi SizedBox
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            // Kontainer Gambar (120px + Padding 8 atas/bawah)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.all(Radius.circular(10)),
+                child: Container(
+                  height: imageDisplayHeight, // 120px
+                  width: double.infinity,
+                  child: _buildVenueImage(imageUrl),
+                ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    '📍 $location',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontFamily: "Poppins",
-                      fontSize: 10,
+
+            // Detail Venue (Memanfaatkan seluruh sisa ruang yang tersedia)
+            // Menggunakan Expanded dan Spacer untuk memastikan tidak ada overflow,
+            // tetapi ini bisa mengubah tata letak detail Anda.
+            // Alternatif termudah: Kurangi padding vertikal.
+
+            // Kita akan mengurangi padding vertikal di sini:
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8.0,
+                // **Mengurangi Vertical Padding agar total tidak melebihi batas**
+                vertical: 2.0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Lokasi
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '📍 $location',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontFamily: "Poppins",
+                        fontSize: 10,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontFamily: "Poppins",
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                  // **Mengurangi Spasi Vertikal**
+                  const SizedBox(height: 4),
+
+                  // Nama Venue (Memungkinkan 2 baris)
+                  Text(
+                    name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: "Poppins",
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.star, color: Colors.amber, size: 14),
-                    const SizedBox(width: 4),
-                    Text('$rating', style: const TextStyle(fontSize: 12)),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "Rp" + formatRupiah(price).toString(),
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black,
+                  // **Mengurangi Spasi Vertikal**
+                  const SizedBox(height: 2),
+
+                  // Rating
+                  Row(
+                    children: [
+                      const Icon(Icons.star, color: Colors.amber, size: 14),
+                      const SizedBox(width: 4),
+                      Text('$rating', style: const TextStyle(fontSize: 12)),
+                    ],
                   ),
-                ),
-              ],
+                  // **Mengurangi Spasi Vertikal**
+                  const SizedBox(height: 4),
+
+                  // Harga
+                  Text(
+                    "Rp" +
+                        (price != null
+                            ? formatRupiah(price).toString()
+                            : 'N/A'),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.primary,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            // **Hapus SizedBox(height: 8) di bagian bawah**
+            // Hapus atau ganti dengan Spacer() jika Anda ingin mendorong konten ke atas.
+            // const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }

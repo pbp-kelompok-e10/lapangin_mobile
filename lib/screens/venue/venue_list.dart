@@ -9,7 +9,9 @@ import 'package:lapangin/screens/venue/venue_detail.dart';
 import 'package:lapangin/screens/venue/create_venue_form.dart';
 
 Future<List<VenueEntry>> fetchAllVenues(CookieRequest request) async {
-  final response = await request.get('http://localhost:8000/venues/api/venues');
+  final response = await request.get(
+    'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/venues',
+  );
 
   if (response is Map<String, dynamic>) {
     // Cek apakah ada error
@@ -149,7 +151,8 @@ class _VenuesPageState extends State<VenuesPage> {
 
   Future<void> _deleteVenueApi(VenueEntry venue) async {
     final request = context.read<CookieRequest>();
-    final url = 'http://localhost:8000/venues/api/delete/${venue.id}/';
+    final url =
+        'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/delete/${venue.id}/';
 
     try {
       final response = await request.post(url, {});
@@ -215,7 +218,8 @@ class _VenuesPageState extends State<VenuesPage> {
 
   Future<void> _fetchPermissionStatus() async {
     final request = context.read<CookieRequest>();
-    const url = 'http://localhost:8000/venues/api/permission/create/';
+    const url =
+        'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/permission/create/';
 
     try {
       final response = await request.get(url);
@@ -239,7 +243,7 @@ class _VenuesPageState extends State<VenuesPage> {
 
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 36),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -248,7 +252,7 @@ class _VenuesPageState extends State<VenuesPage> {
               'Lokasi',
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 14,
+                fontSize: 12,
                 color: Colors.black54,
               ),
             ),
@@ -300,7 +304,7 @@ class _VenuesPageState extends State<VenuesPage> {
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // search bar aseli
             Row(
@@ -339,86 +343,93 @@ class _VenuesPageState extends State<VenuesPage> {
               ],
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // SORT BY & CREATE VENUE BUTTON
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 0,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const ImageIcon(
-                        AssetImage("assets/images/icon/venue_sort_icon.png"),
-                        size: 24.0,
-                      ),
-                      const SizedBox(width: 8),
-                      DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: sortBy,
-                          style: const TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 14,
-                            color: const Color(0xFF737373),
+            IntrinsicHeight(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // 1. DROPDOWN
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const ImageIcon(
+                          AssetImage("assets/images/icon/venue_sort_icon.png"),
+                          size: 24.0,
+                        ),
+                        const SizedBox(width: 8),
+                        DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: sortBy,
+                            isDense: true,
+                            style: const TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 14,
+                              color: Color(0xFF737373),
+                            ),
+                            items: sortOptions.map((String option) {
+                              return DropdownMenuItem<String>(
+                                value: option,
+                                child: Text(option),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              if (newValue != null) {
+                                setState(() {
+                                  sortBy = newValue;
+                                });
+                              }
+                            },
                           ),
-                          items: sortOptions.map((String option) {
-                            return DropdownMenuItem<String>(
-                              value: option,
-                              child: Text(option),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            if (newValue != null) {
-                              setState(() {
-                                sortBy = newValue;
-                              });
-                            }
-                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // 2. CREATE VENUE BUTTON
+                  if (_canCreateVenue)
+                    ElevatedButton.icon(
+                      onPressed: _navigateToCreateVenue,
+                      icon: const Icon(Icons.add, size: 20),
+                      label: const Text(
+                        'Tambah Venue',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ],
-                  ),
-                ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0062FF),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
 
-                // 2. CREATE VENUE BUTTON
-                if (_canCreateVenue)
-                  ElevatedButton.icon(
-                    onPressed: _navigateToCreateVenue,
-                    icon: const Icon(Icons.add, size: 20),
-                    label: const Text(
-                      'Tambah Venue',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 16,
+                        ),
+
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0062FF),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 20,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-              ],
+                ],
+              ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 4),
 
             // VENUE LIST
             FutureBuilder<List<VenueEntry>>(
@@ -427,21 +438,21 @@ class _VenuesPageState extends State<VenuesPage> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
                     child: Padding(
-                      padding: EdgeInsets.all(32.0),
+                      padding: EdgeInsets.all(0),
                       child: CircularProgressIndicator(),
                     ),
                   );
                 } else if (snapshot.hasError) {
                   return Center(
                     child: Padding(
-                      padding: const EdgeInsets.all(32.0),
+                      padding: const EdgeInsets.all(0),
                       child: Text('Error: ${snapshot.error}'),
                     ),
                   );
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(
                     child: Padding(
-                      padding: EdgeInsets.all(32.0),
+                      padding: EdgeInsets.all(0),
                       child: Text('Tidak ada venue tersedia.'),
                     ),
                   );
@@ -484,7 +495,7 @@ class _VenuesPageState extends State<VenuesPage> {
                   if (venues.isEmpty) {
                     return const Center(
                       child: Padding(
-                        padding: EdgeInsets.all(32.0),
+                        padding: EdgeInsets.all(0),
                         child: Text(
                           'Tidak ada venue yang sesuai dengan filter.',
                           style: TextStyle(fontFamily: 'Poppins'),

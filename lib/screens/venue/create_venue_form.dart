@@ -21,6 +21,7 @@ class _CreateVenuePageState extends State<CreateVenuePage> {
   String _thumbnail = '';
   String _description = '';
   bool _isLoading = false;
+  bool _noConnection = false;
 
   static const Color _primaryColor = Color(0xFF0062FF);
   static const Color _secondaryColor = Color(0xFF003C9C);
@@ -35,7 +36,7 @@ class _CreateVenuePageState extends State<CreateVenuePage> {
 
       try {
         final response = await request.postJson(
-          "http://localhost:8000/venues/api/create/",
+          "https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/create/",
           jsonEncode({
             'name': _name,
             'city': _city,
@@ -87,19 +88,29 @@ class _CreateVenuePageState extends State<CreateVenuePage> {
       } catch (e) {
         if (!mounted) return;
 
-        String errorMsg = 'Connection Error: Gagal terhubung ke server.';
-        if (e.toString().contains('403')) {
-          errorMsg =
-              'Akses Ditolak (403): Harap login terlebih dahulu atau periksa izin.';
-        } else if (e.toString().contains('400')) {
-          errorMsg = 'Data Invalid (400): Periksa input Anda.';
+        final errorString = e.toString().toLowerCase();
+        if (errorString.contains('socketexception') ||
+            errorString.contains('handshakeexception') ||
+            errorString.contains('connection') ||
+            errorString.contains('failed host lookup')) {
+          setState(() {
+            _noConnection = true;
+          });
         } else {
-          errorMsg = 'Connection Error: ${e.toString()}';
-        }
+          String errorMsg = 'Connection Error: Gagal terhubung ke server.';
+          if (e.toString().contains('403')) {
+            errorMsg =
+                'Akses Ditolak (403): Harap login terlebih dahulu atau periksa izin.';
+          } else if (e.toString().contains('400')) {
+            errorMsg = 'Data Invalid (400): Periksa input Anda.';
+          } else {
+            errorMsg = 'Connection Error: ${e.toString()}';
+          }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
-        );
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
+          );
+        }
       } finally {
         setState(() {
           _isLoading = false;
@@ -169,6 +180,89 @@ class _CreateVenuePageState extends State<CreateVenuePage> {
 
   @override
   Widget build(BuildContext context) {
+    // No internet connection state
+    if (_noConnection) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: const Text(
+            'Tambah Venue Baru',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: _primaryColor,
+            ),
+          ),
+          backgroundColor: Colors.white,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: _primaryColor),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.wifi_off_rounded,
+                  size: 80,
+                  color: Colors.grey.shade400,
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Tidak Ada Koneksi Internet',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Poppins',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Periksa koneksi internet Anda dan coba lagi.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                    fontFamily: 'Poppins',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _noConnection = false;
+                    });
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text(
+                    'Coba Lagi',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(

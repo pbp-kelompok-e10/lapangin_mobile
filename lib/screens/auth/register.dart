@@ -19,10 +19,87 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+  bool _noConnection = false;
+
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleRegistration() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _noConnection = false;
+    });
+
+    final request = context.read<CookieRequest>();
+
+    String username = _usernameController.text;
+    String password1 = _passwordController.text;
+    String password2 = _confirmPasswordController.text;
+
+    try {
+      final response = await request.postJson(
+        "https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/auth/register/",
+        jsonEncode({
+          "username": username,
+          "password1": password1,
+          "password2": password2,
+        }),
+      );
+
+      if (context.mounted) {
+        if (response['status'] == 'success') {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              const SnackBar(
+                content: Text('Registrasi berhasil! Silahkan Masuk.'),
+              ),
+            );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginPage()),
+          );
+        } else {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(
+                  response['message'] ?? 'Gagal mendaftar!',
+                  style: const TextStyle(fontFamily: "Poppins"),
+                ),
+              ),
+            );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        setState(() {
+          _noConnection = true;
+        });
+      }
+    } finally {
+      if (context.mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final request = context.watch<CookieRequest>();
     final screenHeight = MediaQuery.of(context).size.height;
 
     InputDecoration _getInputDecoration({
@@ -73,6 +150,75 @@ class _RegisterPageState extends State<RegisterPage> {
       );
     }
 
+    // No internet connection state
+    if (_noConnection) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.wifi_off_rounded,
+                  size: 80,
+                  color: Colors.grey.shade400,
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Tidak Ada Koneksi Internet',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Poppins',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Periksa koneksi internet Anda dan coba lagi.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                    fontFamily: 'Poppins',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _noConnection = false;
+                    });
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text(
+                    'Coba Lagi',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0062FF),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
@@ -97,7 +243,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(height: 36.0),
 
-                // --- Input Nama Lengkap (Sesuai Gambar) ---
+                // Input Field
                 TextFormField(
                   controller: _fullNameController,
                   decoration: _getInputDecoration(
@@ -114,7 +260,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(height: 12.0),
 
-                // --- Input Username ---
                 TextFormField(
                   controller: _usernameController,
                   decoration: _getInputDecoration(
@@ -131,7 +276,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(height: 12.0),
 
-                // --- Input Kata Sandi ---
                 TextFormField(
                   controller: _passwordController,
                   obscureText: !_isPasswordVisible,
@@ -158,7 +302,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(height: 12.0),
 
-                // --- Input Konfirmasi Kata Sandi
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: !_isConfirmPasswordVisible,
@@ -184,54 +327,15 @@ class _RegisterPageState extends State<RegisterPage> {
                   },
                 ),
                 const SizedBox(height: 36.0),
-                // --- Tombol DAFTAR ---
+
+                // tombol Daftar
                 ElevatedButton(
-                  onPressed: () async {
-                    if (_formKey.currentState!.validate()) {
-                      String username = _usernameController.text;
-                      String password1 = _passwordController.text;
-                      String password2 = _confirmPasswordController.text;
-
-                      final response = await request.postJson(
-                        "http://localhost:8000/auth/register/",
-                        jsonEncode({
-                          "username": username,
-                          "password1": password1,
-                          "password2": password2,
-                        }),
-                      );
-
-                      if (context.mounted) {
-                        if (response['status'] == 'success') {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Registrasi berhasil! Silahkan Masuk.',
-                              ),
-                            ),
-                          );
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginPage(),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                response['message'] ?? 'Gagal mendaftar!',
-                                style: const TextStyle(fontFamily: "Poppins"),
-                              ),
-                            ),
-                          );
-                        }
-                      }
-                    }
-                  },
+                  onPressed: _isLoading ? null : _handleRegistration,
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
-                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    backgroundColor: _isLoading
+                        ? Theme.of(context).colorScheme.primary.withOpacity(0.5)
+                        : Theme.of(context).colorScheme.primary,
                     minimumSize: const Size(double.infinity, 50),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8.0),
@@ -239,17 +343,28 @@ class _RegisterPageState extends State<RegisterPage> {
                     padding: const EdgeInsets.symmetric(vertical: 14.0),
                     elevation: 5,
                   ),
-                  child: const Text(
-                    'Daftar',
-                    style: TextStyle(
-                      fontSize: 18.0,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: "Poppins",
-                    ),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 3,
+                          ),
+                        )
+                      // Tampilkan teks 'Daftar' saat tidak loading
+                      : const Text(
+                          'Daftar',
+                          style: TextStyle(
+                            fontSize: 18.0,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: "Poppins",
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 36.0),
 
+                // Login Navigation
                 const Row(
                   children: [
                     Expanded(child: Divider(thickness: 1, color: Colors.grey)),
@@ -278,6 +393,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     const SizedBox(width: 4.0),
                     GestureDetector(
                       onTap: () {
+                        if (_isLoading) return;
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
