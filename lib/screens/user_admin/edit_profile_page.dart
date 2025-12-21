@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:lapangin/config/api_config.dart';
 
 class EditProfilePage extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -13,9 +14,6 @@ class EditProfilePage extends StatefulWidget {
 
 class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
-
-  // CHANGED: Use production URL
-  static const String baseUrl = 'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id';
 
   late TextEditingController _fullNameController;
   late TextEditingController _emailController;
@@ -61,15 +59,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
     try {
       final request = context.read<CookieRequest>();
 
-      final response = await request.post(
-        '$baseUrl/user/api/update-profile/',
-        {
-          'full_name': _fullNameController.text,
-          'email': _emailController.text,
-          'phone': _phoneController.text,
-          'address': _addressController.text,
-        },
-      );
+      final response = await request.post(ApiConfig.updateProfileUrl, {
+        'full_name': _fullNameController.text,
+        'email': _emailController.text,
+        'phone': _phoneController.text,
+        'address': _addressController.text,
+      });
 
       print('📤 Update Profile Response: $response');
 
@@ -80,7 +75,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (response['status'] == 'success') {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response['message'] ?? 'Profile updated successfully!'),
+            content: Text(
+              response['message'] ?? 'Profile updated successfully!',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -100,10 +97,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -129,7 +123,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     children: [
                       CircleAvatar(
                         radius: 50,
-                        backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.primary.withOpacity(0.1),
                         child: Text(
                           widget.userData['username'][0].toUpperCase(),
                           style: TextStyle(
@@ -155,10 +151,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                 const Text(
                   'Personal Information',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
 
@@ -188,7 +181,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
                   validator: (value) {
                     if (value != null && value.isNotEmpty) {
-                      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                      final emailRegex = RegExp(
+                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                      );
                       if (!emailRegex.hasMatch(value)) {
                         return 'Please enter a valid email';
                       }
@@ -236,20 +231,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
                     child: _isLoading
                         ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
                         : const Text(
-                      'Save Changes',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                            'Save Changes',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
 

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:lapangin/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lapangin/models/faq/faq_entry.dart';
@@ -247,8 +248,8 @@ class _FaqFormPageState extends State<FaqFormPage> {
                       onPressed: () async {
                         if (_formKey.currentState!.validate()) {
                           String url = isEdit
-                              ? 'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/faq/update-flutter/${widget.faq!.pk}/'
-                              : 'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/faq/create-flutter/';
+                              ? ApiConfig.updateFaqUrl(widget.faq!.pk)
+                              : ApiConfig.createFaqUrl;
 
                           final response = await request.postJson(
                             url,

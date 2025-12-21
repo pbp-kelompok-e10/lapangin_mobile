@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:lapangin/config/api_config.dart';
 import 'package:lapangin/screens/auth/login.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
@@ -49,7 +50,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     try {
       final response = await request.postJson(
-        "https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/auth/register/",
+        ApiConfig.registerUrl,
         jsonEncode({
           "username": username,
           "password1": password1,

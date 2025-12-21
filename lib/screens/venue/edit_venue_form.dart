@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:lapangin/config/api_config.dart';
 import 'package:lapangin/models/venue_entry.dart';
 import 'package:provider/provider.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
@@ -25,6 +26,8 @@ class _EditVenuePageState extends State<EditVenuePage> {
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _thumbnailController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _facilitiesController = TextEditingController();
+  final TextEditingController _rulesController = TextEditingController();
 
   String _name = '';
   String _city = '';
@@ -33,8 +36,9 @@ class _EditVenuePageState extends State<EditVenuePage> {
   double _price = 0.0;
   String _thumbnail = '';
   String _description = '';
+  String _facilities = '';
+  String _rules = '';
 
-  // Status loading
   bool _isLoading = false;
   bool _isDataLoading = true;
   bool _noConnection = false;
@@ -62,9 +66,10 @@ class _EditVenuePageState extends State<EditVenuePage> {
     _priceController.text = venue.price.toString();
     _thumbnailController.text = venue.thumbnail;
     _descriptionController.text = venue.description;
+    _facilitiesController.text = venue.facilities;
+    _rulesController.text = venue.rules;
   }
 
-  // Mengirim pembaruan venue ke server
   Future<void> _submitEditVenue(BuildContext context) async {
     final request = context.read<CookieRequest>();
     if (_formKey.currentState!.validate()) {
@@ -74,9 +79,7 @@ class _EditVenuePageState extends State<EditVenuePage> {
       });
 
       try {
-        // Endpoint edit venue di Django
-        final url =
-            "https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/edit/${widget.venueId}";
+        final url = ApiConfig.editVenueUrl(widget.venueId);
 
         final response = await request.postJson(
           url,
@@ -88,8 +91,11 @@ class _EditVenuePageState extends State<EditVenuePage> {
             'price': _price.toString(),
             'thumbnail': _thumbnail,
             'description': _description,
+            'facilities': _facilities,
+            'rules': _rules,
           }),
         );
+
         if (!mounted) return;
 
         if (response is Map<String, dynamic> &&
@@ -98,82 +104,29 @@ class _EditVenuePageState extends State<EditVenuePage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                response['message'] ??
-                    'Venue ID ${widget.venueId} berhasil diperbarui!',
+                response['message'] ?? 'Venue berhasil diperbarui!',
               ),
               backgroundColor: _primaryColor,
             ),
           );
           Navigator.pop(context, true);
-        } else if (response is Map<String, dynamic> &&
-            response.containsKey('errors')) {
-          final errors = response['errors'];
-          String errorMessage = 'Gagal memperbarui venue.';
-          try {
-            final errorMap = jsonDecode(errors);
-            errorMessage = _formatErrors(errorMap);
-          } catch (e) {
-            errorMessage =
-                'Gagal memperbarui venue: Data yang dikirimkan tidak valid.';
-          }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
-          );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Venue diperbarui, tetapi format respons tidak terduga: ${response.toString()}',
-              ),
-              backgroundColor: Colors.orange,
+            const SnackBar(
+              content: Text('Gagal memperbarui venue.'),
+              backgroundColor: Colors.red,
             ),
           );
-          Navigator.pop(context, true);
         }
       } catch (e) {
         if (!mounted) return;
-
-        final errorString = e.toString().toLowerCase();
-        if (errorString.contains('socketexception') ||
-            errorString.contains('handshakeexception') ||
-            errorString.contains('connection') ||
-            errorString.contains('failed host lookup')) {
-          setState(() {
-            _noConnection = true;
-          });
-        } else {
-          String errorMsg = 'Kesalahan Koneksi: Gagal terhubung ke server.';
-          if (e.toString().contains('403')) {
-            errorMsg =
-                'Akses Ditolak (403): Harap login terlebih dahulu atau periksa izin.';
-          } else if (e.toString().contains('400')) {
-            errorMsg = 'Data Invalid (400): Periksa input Anda.';
-          } else {
-            errorMsg = 'Kesalahan Koneksi: ${e.toString()}';
-          }
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
-          );
-        }
+        setState(() => _noConnection = true);
       } finally {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
 
-  // Fungsi utilitas untuk memformat pesan error (konsisten)
-  String _formatErrors(Map<String, dynamic> errors) {
-    String formatted = 'Mohon perbaiki kesalahan berikut:\n';
-    errors.forEach((key, value) {
-      formatted += '- ${key.toUpperCase()}: ${(value as List).join(', ')}\n';
-    });
-    return formatted.trim();
-  }
-
-  // Widget _buildModernTextFormField
   Widget _buildModernTextFormField({
     required String labelText,
     required TextEditingController controller,
@@ -183,6 +136,7 @@ class _EditVenuePageState extends State<EditVenuePage> {
     void Function(String?)? onSaved,
     int maxLines = 1,
     String? hintText,
+    String? helperText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -207,6 +161,12 @@ class _EditVenuePageState extends State<EditVenuePage> {
           style: const TextStyle(fontFamily: 'Poppins', fontSize: 16),
           decoration: InputDecoration(
             hintText: hintText,
+            helperText: helperText,
+            helperStyle: TextStyle(
+              color: Colors.orange.shade800,
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
+            ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 12,
@@ -236,89 +196,30 @@ class _EditVenuePageState extends State<EditVenuePage> {
     _priceController.dispose();
     _thumbnailController.dispose();
     _descriptionController.dispose();
+    _facilitiesController.dispose();
+    _rulesController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // No internet connection state
     if (_noConnection) {
       return Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          title: const Text(
-            'Edit Venue',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-              color: _primaryColor,
-            ),
-          ),
-          backgroundColor: Colors.white,
-          elevation: 0,
-          iconTheme: const IconThemeData(color: _primaryColor),
-        ),
         body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.wifi_off_rounded,
-                  size: 80,
-                  color: Colors.grey.shade400,
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Tidak Ada Koneksi Internet',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Poppins',
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Periksa koneksi internet Anda dan coba lagi.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                    fontFamily: 'Poppins',
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _noConnection = false;
-                    });
-                  },
-                  icon: const Icon(Icons.refresh),
-                  label: const Text(
-                    'Coba Lagi',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 14,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.wifi_off_rounded, size: 80, color: Colors.grey),
+              const Text(
+                'Tidak Ada Koneksi Internet',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => setState(() => _noConnection = false),
+                child: const Text('Coba Lagi'),
+              ),
+            ],
           ),
         ),
       );
@@ -326,19 +227,17 @@ class _EditVenuePageState extends State<EditVenuePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Edit Venue',
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.bold,
-            fontSize: 20,
             color: _primaryColor,
           ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: _primaryColor),
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
       ),
       body: _isDataLoading
           ? const Center(child: CircularProgressIndicator(color: _primaryColor))
@@ -349,107 +248,86 @@ class _EditVenuePageState extends State<EditVenuePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    // Name Field
                     _buildModernTextFormField(
                       labelText: 'Nama Stadion',
                       controller: _nameController,
-                      hintText: 'Masukkan nama stadion...',
-                      validator: (value) => value!.isEmpty
-                          ? 'Nama stadion tidak boleh kosong.'
-                          : null,
+                      validator: (value) =>
+                          value!.isEmpty ? 'Nama tidak boleh kosong.' : null,
                       onSaved: (value) => _name = value!,
                     ),
                     const SizedBox(height: 16),
-
-                    // City Field
                     _buildModernTextFormField(
                       labelText: 'Kota',
                       controller: _cityController,
-                      hintText: 'Contoh: Jakarta Selatan',
-                      validator: (value) =>
-                          value!.isEmpty ? 'Kota tidak boleh kosong.' : null,
                       onSaved: (value) => _city = value!,
                     ),
                     const SizedBox(height: 16),
-
-                    // Country Field
                     _buildModernTextFormField(
                       labelText: 'Negara',
                       controller: _countryController,
-                      hintText: 'Contoh: Indonesia',
-                      validator: (value) =>
-                          value!.isEmpty ? 'Negara tidak boleh kosong.' : null,
                       onSaved: (value) => _country = value!,
                     ),
                     const SizedBox(height: 16),
-
-                    // Capacity Field (Input Type Number)
                     _buildModernTextFormField(
-                      labelText: 'Kapasitas Penonton',
+                      labelText: 'Kapasitas',
                       controller: _capacityController,
-                      hintText: 'Masukkan jumlah kapasitas...',
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      validator: (value) {
-                        if (value == null || value.isEmpty)
-                          return 'Kapasitas tidak boleh kosong.';
-                        if (int.tryParse(value) == null ||
-                            int.parse(value) <= 0)
-                          return 'Masukkan angka kapasitas yang valid (> 0).';
-                        return null;
-                      },
                       onSaved: (value) => _capacity = int.parse(value!),
                     ),
-
                     const SizedBox(height: 16),
-
-                    // Price Field (Input Type Decimal)
                     _buildModernTextFormField(
-                      labelText: 'Harga Sewa (Per Hari, dalam IDR)',
+                      labelText: 'Harga Sewa (IDR)',
                       controller: _priceController,
-                      hintText: 'Contoh: 3500000',
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty)
-                          return 'Harga sewa tidak boleh kosong.';
-                        if (double.tryParse(value) == null ||
-                            double.parse(value) < 0)
-                          return 'Masukkan harga sewa yang valid.';
-                        return null;
-                      },
                       onSaved: (value) => _price = double.parse(value!),
                     ),
                     const SizedBox(height: 16),
-
-                    // Thumbnail URL Field
                     _buildModernTextFormField(
-                      labelText: 'URL Gambar Thumbnail',
+                      labelText: 'URL Gambar',
                       controller: _thumbnailController,
-                      hintText: 'URL gambar utama venue (opsional)',
                       onSaved: (value) => _thumbnail = value ?? '',
                     ),
                     const SizedBox(height: 16),
-
-                    // Description Field
                     _buildModernTextFormField(
-                      labelText: 'Deskripsi Venue',
+                      labelText: 'Deskripsi',
                       controller: _descriptionController,
-                      hintText: 'Jelaskan fasilitas dan keunggulan venue...',
-                      maxLines: 5,
+                      maxLines: 4,
                       onSaved: (value) => _description = value ?? '',
+                    ),
+                    const SizedBox(height: 16),
+
+                    _buildModernTextFormField(
+                      labelText: 'Fasilitas',
+                      controller: _facilitiesController,
+                      hintText: 'Contoh: WiFi\nKamar Ganti',
+                      maxLines: 4,
+                      helperText:
+                          '💡 Tekan Enter untuk membuat baris baru per fasilitas',
+                      onSaved: (value) => _facilities = value ?? '',
+                    ),
+                    const SizedBox(height: 16),
+
+                    _buildModernTextFormField(
+                      labelText: 'Aturan Venue',
+                      controller: _rulesController,
+                      hintText:
+                          'Contoh: Gunakan sepatu olahraga\nDilarang merokok',
+                      maxLines: 4,
+                      helperText:
+                          '💡 Tekan Enter untuk membuat baris baru per aturan',
+                      onSaved: (value) => _rules = value ?? '',
                     ),
                     const SizedBox(height: 32),
 
-                    // Submit Button (Edit Button)
                     ElevatedButton.icon(
                       onPressed: _isLoading
                           ? null
                           : () => _submitEditVenue(context),
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size.fromHeight(55),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
                         backgroundColor: _secondaryColor,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
@@ -465,7 +343,7 @@ class _EditVenuePageState extends State<EditVenuePage> {
                                 strokeWidth: 3,
                               ),
                             )
-                          : const Icon(Icons.edit_note_rounded, size: 24),
+                          : const Icon(Icons.edit_note_rounded),
                       label: Text(
                         _isLoading ? 'Sedang Menyimpan...' : 'Simpan Perubahan',
                         style: const TextStyle(

@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:lapangin/config/api_config.dart';
+import 'package:lapangin/screens/booking/create_booking_page.dart';
 import 'package:provider/provider.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:lapangin/helper/price_formatter.dart';
@@ -11,9 +13,7 @@ Future<VenueEntry> fetchVenueDetail(
   CookieRequest request,
   String venueId,
 ) async {
-  final response = await request.get(
-    'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/detail/$venueId/',
-  );
+  final response = await request.get(ApiConfig.venueDetailUrl(venueId));
 
   if (response is Map<String, dynamic> &&
       response.containsKey('success') &&
@@ -33,7 +33,6 @@ Future<VenueEntry> fetchVenueDetail(
   }
 }
 
-// Halaman Detail Venue
 class VenueDetailPage extends StatefulWidget {
   final String venueId;
 
@@ -48,6 +47,11 @@ class _VenueDetailPageState extends State<VenueDetailPage> {
   bool _isLoading = true;
   String? _error;
   bool _noConnection = false;
+  bool _reviewChanged = false;
+
+  void _onReviewChanged() {
+    _reviewChanged = true;
+  }
 
   @override
   void initState() {
@@ -91,13 +95,11 @@ class _VenueDetailPageState extends State<VenueDetailPage> {
     }
   }
 
-  // Helper untuk menampilkan gambar
   Widget _buildVenueImage(String imageUrl, BuildContext context) {
     const base64Header = 'data:image';
     Widget imageWidget;
     final double imageHeight = MediaQuery.of(context).size.height * 0.35;
 
-    // Logika menampilkan gambar (base64, network, atau asset)
     if (imageUrl.startsWith(base64Header)) {
       try {
         final parts = imageUrl.split(',');
@@ -143,96 +145,25 @@ class _VenueDetailPageState extends State<VenueDetailPage> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    if (_noConnection) {
-      return Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          title: const Text('Detail Venue'),
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          elevation: 0,
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.wifi_off_rounded,
-                  size: 80,
-                  color: Colors.grey.shade400,
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Tidak Ada Koneksi Internet',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Poppins',
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Periksa koneksi internet Anda dan coba lagi.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                    fontFamily: 'Poppins',
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton.icon(
-                  onPressed: _loadVenueDetail,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text(
-                    'Coba Lagi',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0062FF),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 14,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (_error != null) {
+    if (_noConnection || _error != null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Detail Venue')),
         body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Gagal memuat detail venue: $_error',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _loadVenueDetail,
-                  child: const Text('Coba Lagi'),
-                ),
-              ],
-            ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                _noConnection ? Icons.wifi_off : Icons.error,
+                size: 64,
+                color: Colors.grey,
+              ),
+              const SizedBox(height: 16),
+              Text(_noConnection ? "Tidak ada koneksi" : "Error: $_error"),
+              ElevatedButton(
+                onPressed: _loadVenueDetail,
+                child: const Text("Coba Lagi"),
+              ),
+            ],
           ),
         ),
       );
@@ -240,45 +171,105 @@ class _VenueDetailPageState extends State<VenueDetailPage> {
 
     final venue = _venue!;
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        // AppBar transparan di atas gambar
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // BAGIAN GAMBAR
-                  _buildVenueImage(venue.thumbnail, context),
-                  // BAGIAN DETAIL
-                  VenueDetailBody(venue: venue),
-                ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          Navigator.of(context).pop(_reviewChanged);
+        }
+      },
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: CircleAvatar(
+            backgroundColor: Colors.black26,
+            child: IconButton(
+              icon: const Icon(
+                Icons.arrow_back_ios_new,
+                color: Colors.white,
+                size: 18,
               ),
+              onPressed: () => Navigator.of(context).pop(_reviewChanged),
             ),
           ),
-          // BAGIAN FOOTER (HARGA & SEWA)
-          VenueDetailFooter(venue: venue),
-        ],
+        ),
+        body: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildVenueImage(venue.thumbnail, context),
+                    VenueDetailBody(
+                      venue: venue,
+                      onReviewChanged: _onReviewChanged,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            VenueDetailFooter(venue: venue),
+          ],
+        ),
       ),
     );
   }
 }
 
-// Body utama halaman detail (Nama, Deskripsi, Fasilitas, Aturan)
 class VenueDetailBody extends StatelessWidget {
   final VenueEntry venue;
+  final VoidCallback? onReviewChanged;
 
-  const VenueDetailBody({super.key, required this.venue});
+  const VenueDetailBody({super.key, required this.venue, this.onReviewChanged});
+
+  // Fungsi Helper untuk mengubah string newline menjadi List Widget Bullet
+  List<Widget> _buildBulletList(String text) {
+    if (text.isEmpty) {
+      return [
+        const Text(
+          "Data tidak tersedia",
+          style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+        ),
+      ];
+    }
+    // Pisahkan string berdasarkan baris baru dan hapus baris kosong
+    List<String> lines = text
+        .split('\n')
+        .where((s) => s.trim().isNotEmpty)
+        .toList();
+
+    return lines.map((line) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "• ",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Color(0xFF0062FF),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                line.trim(),
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -286,16 +277,16 @@ class VenueDetailBody extends StatelessWidget {
     final rawId = request.jsonData != null
         ? (request.jsonData['id'] ?? request.jsonData['user_id'])
         : null;
-    final int currentUserId = rawId != null ? int.tryParse(rawId.toString()) ?? 0 : 0;
+    final int currentUserId = rawId != null
+        ? int.tryParse(rawId.toString()) ?? 0
+        : 0;
     final bool loggedIn = request.loggedIn == true;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 16),
-          // LOKASI dan RATING
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -303,7 +294,6 @@ class VenueDetailBody extends StatelessWidget {
                 '${venue.city}, ${venue.country}',
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 14,
                   color: Colors.grey.shade600,
                   fontWeight: FontWeight.w500,
                 ),
@@ -311,22 +301,15 @@ class VenueDetailBody extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    venue.rating.toStringAsFixed(2),
-                    style: const TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    venue.rating.toStringAsFixed(1),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(width: 4),
                   const Icon(Icons.star, color: Colors.amber, size: 18),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 8),
-
-          // NAMA VENUE
           Text(
             venue.name,
             style: const TextStyle(
@@ -335,31 +318,43 @@ class VenueDetailBody extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
-
-          // DESKRIPSI
+          const SizedBox(height: 12),
+          const Text(
+            "Deskripsi",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          const SizedBox(height: 4),
           Text(
             venue.description.isEmpty
                 ? "Deskripsi tidak tersedia."
                 : venue.description,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 14,
-              color: Colors.grey.shade800,
-            ),
+            style: const TextStyle(color: Colors.black87, height: 1.5),
           ),
           const SizedBox(height: 24),
 
-          // FASILITAS VENUE
-          _buildFacilitiesExpansionTile(),
+          // LIST FASILITAS
+          _buildExpansionCard(
+            title: 'Fasilitas Venue',
+            icon: Icons.layers_outlined,
+            content: _buildBulletList(venue.facilities),
+          ),
           const SizedBox(height: 16),
 
-          // ATURAN VENUE (Dummy)
-          _buildRulesExpansionTile(),
+          // ATURAN VENUE
+          _buildExpansionCard(
+            title: 'Aturan Venue',
+            icon: Icons.rule_outlined,
+            content: _buildBulletList(venue.rules),
+            isWarning: true,
+          ),
           const SizedBox(height: 24),
 
           // Bagian Ulasan (Review)
-          ReviewSection(venueId: venue.id!, currentUserId: currentUserId),
+          ReviewSection(
+            venueId: venue.id!,
+            currentUserId: currentUserId,
+            onReviewChanged: onReviewChanged,
+          ),
           const SizedBox(height: 24),
 
           const SizedBox(
@@ -370,98 +365,37 @@ class VenueDetailBody extends StatelessWidget {
     );
   }
 
-  // Widget untuk menampilkan daftar fasilitas
-  Widget _buildFacilitiesExpansionTile() {
+  Widget _buildExpansionCard({
+    required String title,
+    required IconData icon,
+    required List<Widget> content,
+    bool isWarning = false,
+  }) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: ExpansionTile(
         initiallyExpanded: true,
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16),
-        title: const Text(
-          'Fasilitas Venue',
-          style: TextStyle(
+        shape: const Border(), // Hilangkan border default expansion tile
+        leading: Icon(
+          icon,
+          color: isWarning ? Colors.orange : const Color(0xFF0062FF),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
             fontFamily: 'Poppins',
-            fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            fontSize: 16,
           ),
         ),
         children: [
-          // Tambahkan divider di dalam children jika ExpansionTile terbuka
-          const Divider(height: 1, thickness: 1, indent: 16, endIndent: 16),
-          Text(
-            venue.description.isEmpty
-                ? "Deskripsi tidak tersedia."
-                : venue.description,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 14,
-              color: Colors.grey.shade800,
-            ),
-          ),
-          const SizedBox(height: 8),
-        ],
-      ),
-    );
-  }
-
-  // Item Fasilitas
-  Widget _buildFacilityItem(IconData icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 0.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20, color: Colors.black54),
-          const SizedBox(width: 12),
-          Text(
-            text,
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 14,
-              color: Colors.black87,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Widget untuk menampilkan aturan venue
-  Widget _buildRulesExpansionTile() {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16),
-        title: const Text(
-          'Aturan Venue',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
-        children: [
-          const Divider(height: 1, thickness: 1, indent: 16, endIndent: 16),
+          const Divider(height: 1),
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Text(
-              venue.description.isEmpty
-                  ? 'Mohon baca aturan venue yang berlaku sebelum melakukan pemesanan.'
-                  : venue.description,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14,
-                color: Colors.black87,
-              ),
-            ),
+            child: Column(children: content),
           ),
         ],
       ),
@@ -469,83 +403,76 @@ class VenueDetailBody extends StatelessWidget {
   }
 }
 
-// Footer halaman detail (Harga dan Tombol Sewa)
 class VenueDetailFooter extends StatelessWidget {
   final VenueEntry venue;
-
   const VenueDetailFooter({super.key, required this.venue});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 12,
+        bottom: MediaQuery.of(context).padding.bottom > 0
+            ? MediaQuery.of(context).padding.bottom
+            : 12,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
-            spreadRadius: 2,
-            blurRadius: 5,
+            color: Colors.black12,
+            blurRadius: 10,
             offset: const Offset(0, -3),
           ),
         ],
       ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Harga
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Rp${formatRupiah(venue.price)},-',
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                const Text(
-                  'per hari',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-
-            // Tombol Sewa
-            ElevatedButton(
-              onPressed: () {
-                // TODO: Logika booking/sewa akan diimplementasikan oleh pemilik modul booking
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0062FF),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 64,
-                  vertical: 24,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Rp${formatRupiah(venue.price)}',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
                 ),
               ),
-              child: const Text(
-                'Sewa',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                ),
+              const Text(
+                'per hari',
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            ],
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (c) => CreateBookingPage(venueId: venue.id),
               ),
             ),
-          ],
-        ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0062FF),
+              padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: const Text(
+              'Sewa',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -554,11 +481,13 @@ class VenueDetailFooter extends StatelessWidget {
 class ReviewSection extends StatefulWidget {
   final String venueId;
   final int currentUserId;
+  final VoidCallback? onReviewChanged;
 
   const ReviewSection({
     super.key,
     required this.venueId,
     required this.currentUserId,
+    this.onReviewChanged,
   });
 
   @override
@@ -579,9 +508,7 @@ class _ReviewSectionState extends State<ReviewSection> {
   Future<void> fetchReviews() async {
     final request = context.read<CookieRequest>();
 
-    final response = await request.get(
-      'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/review/reviews/${widget.venueId}',
-    );
+    final response = await request.get(ApiConfig.reviewsUrl(widget.venueId));
 
     setState(() {
       reviews = List<Map<String, dynamic>>.from(response['reviews']);
@@ -595,6 +522,11 @@ class _ReviewSectionState extends State<ReviewSection> {
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
+
+    final request = context.read<CookieRequest>();
+    final isAdmin =
+        request.jsonData?['is_admin'] == true ||
+        request.jsonData?['is_superuser'] == true;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -611,7 +543,14 @@ class _ReviewSectionState extends State<ReviewSection> {
               ),
             ),
             ElevatedButton(
-              onPressed: () => showReviewModal(context, venueId: widget.venueId, onSuccess: fetchReviews),
+              onPressed: () => showReviewModal(
+                context,
+                venueId: widget.venueId,
+                onSuccess: () {
+                  fetchReviews();
+                  widget.onReviewChanged?.call();
+                },
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0062FF),
               ),
@@ -641,6 +580,7 @@ class _ReviewSectionState extends State<ReviewSection> {
           return ReviewCard(
             review: review,
             isOwner: isOwner,
+            canDelete: isAdmin,
 
             onEdit: () {
               selectedRating.value = review["rating"] is int
@@ -651,7 +591,10 @@ class _ReviewSectionState extends State<ReviewSection> {
                 context,
                 venueId: widget.venueId,
                 initialComment: review["comment"] ?? "",
-                onSuccess: fetchReviews,
+                onSuccess: () {
+                  fetchReviews();
+                  widget.onReviewChanged?.call();
+                },
               );
             },
 
@@ -669,10 +612,7 @@ class _ReviewSectionState extends State<ReviewSection> {
                   ),
                   content: const Text(
                     "Yakin ingin menghapus review ini?",
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(fontFamily: 'Poppins', fontSize: 14),
                   ),
                   actions: [
                     TextButton(
@@ -702,11 +642,9 @@ class _ReviewSectionState extends State<ReviewSection> {
               );
 
               if (confirm == true) {
-                await deleteReview(
-                  context: context,
-                  venueId: widget.venueId,
-                );
+                await deleteReview(context: context, venueId: widget.venueId);
                 fetchReviews();
+                widget.onReviewChanged?.call();
               }
             },
           );
@@ -718,7 +656,8 @@ class _ReviewSectionState extends State<ReviewSection> {
 
 final selectedRating = ValueNotifier<int>(0);
 
-void showReviewModal(BuildContext context, {
+void showReviewModal(
+  BuildContext context, {
   required String venueId,
   required VoidCallback onSuccess,
 }) {
@@ -812,11 +751,17 @@ void showReviewModal(BuildContext context, {
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Colors.grey, width: 1),
+                        borderSide: const BorderSide(
+                          color: Colors.grey,
+                          width: 1,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Color(0xFF0062FF), width: 1.5),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF0062FF),
+                          width: 1.5,
+                        ),
                       ),
                     ),
                   ),
@@ -844,7 +789,8 @@ void showReviewModal(BuildContext context, {
                         valueListenable: selectedRating,
                         builder: (context, value, _) {
                           return ElevatedButton(
-                            onPressed: value == 0 ||
+                            onPressed:
+                                value == 0 ||
                                     reviewController.text.trim().isEmpty
                                 ? null
                                 : () async {
@@ -893,14 +839,11 @@ Future<void> submitReview({
 }) async {
   final request = context.read<CookieRequest>();
 
-  final response = await request.post(
-    'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/review/api/add/',
-    {
-      'venue_id': venueId,
-      'rating': rating.toString(),
-      'comment': comment,
-    },
-  );
+  final response = await request.post(ApiConfig.addReviewUrl, {
+    'venue_id': venueId,
+    'rating': rating.toString(),
+    'comment': comment,
+  });
 
   if (response['success'] != true) {
     throw Exception(response['message'] ?? 'Gagal mengirim review');
@@ -913,12 +856,9 @@ Future<void> deleteReview({
 }) async {
   final request = context.read<CookieRequest>();
 
-  final response = await request.post(
-    'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/review/api/delete/',
-    {
-      'venue_id': venueId,
-    },
-  );
+  final response = await request.post(ApiConfig.deleteReviewUrl, {
+    'venue_id': venueId,
+  });
 
   if (response['success'] != true) {
     throw Exception(response['message'] ?? 'Gagal menghapus review');
@@ -933,14 +873,11 @@ Future<void> editReview({
 }) async {
   final request = context.read<CookieRequest>();
 
-  final response = await request.post(
-    'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/review/api/edit/',
-    {
-      'venue_id': venueId,
-      'rating': rating.toString(),
-      'comment': comment,
-    },
-  );
+  final response = await request.post(ApiConfig.editReviewUrl, {
+    'venue_id': venueId,
+    'rating': rating.toString(),
+    'comment': comment,
+  });
 
   if (response['success'] != true) {
     throw Exception(response['message'] ?? 'Gagal edit review');
@@ -953,8 +890,9 @@ void showEditReviewModal(
   required String initialComment,
   required VoidCallback onSuccess,
 }) {
-  final TextEditingController controller =
-      TextEditingController(text: initialComment);
+  final TextEditingController controller = TextEditingController(
+    text: initialComment,
+  );
   final ValueNotifier<int> selectedRating = ValueNotifier<int>(0);
 
   showDialog(
@@ -1033,11 +971,17 @@ void showEditReviewModal(
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Colors.grey, width: 1),
+                        borderSide: const BorderSide(
+                          color: Colors.grey,
+                          width: 1,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Color(0xFF0062FF), width: 1.5),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF0062FF),
+                          width: 1.5,
+                        ),
                       ),
                     ),
                   ),
@@ -1065,7 +1009,8 @@ void showEditReviewModal(
                         valueListenable: selectedRating,
                         builder: (context, value, _) {
                           return ElevatedButton(
-                            onPressed: value == 0 || controller.text.trim().isEmpty
+                            onPressed:
+                                value == 0 || controller.text.trim().isEmpty
                                 ? null
                                 : () async {
                                     await editReview(

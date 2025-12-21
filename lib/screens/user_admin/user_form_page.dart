@@ -21,7 +21,8 @@ class _UserFormPageState extends State<UserFormPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
 
@@ -78,8 +79,12 @@ class _UserFormPageState extends State<UserFormPage> {
         response = await _userService.updateUser(
           userId: widget.user!.id,
           username: _usernameController.text,
-          password: _passwordController.text.isEmpty ? null : _passwordController.text,
-          confirmPassword: _confirmPasswordController.text.isEmpty ? null : _confirmPasswordController.text,
+          password: _passwordController.text.isEmpty
+              ? null
+              : _passwordController.text,
+          confirmPassword: _confirmPasswordController.text.isEmpty
+              ? null
+              : _confirmPasswordController.text,
           fullName: _fullNameController.text,
           phone: _phoneController.text,
           address: _addressController.text,
@@ -121,6 +126,7 @@ class _UserFormPageState extends State<UserFormPage> {
         if (response['errors'] != null) {
           // Parse validation errors
           Map<String, dynamic> errors = response['errors'];
+          print("DEBUG ERRORS: $errors"); // <--
           List<String> errorList = [];
 
           errors.forEach((key, value) {
@@ -150,10 +156,7 @@ class _UserFormPageState extends State<UserFormPage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -209,7 +212,9 @@ class _UserFormPageState extends State<UserFormPage> {
 
                 // Password Section
                 _buildSectionHeader(
-                    isEditMode ? 'Change Password (leave blank to keep current)' : 'Password *'
+                  isEditMode
+                      ? 'Change Password (leave blank to keep current)'
+                      : 'Password *',
                 ),
                 const SizedBox(height: 16),
 
@@ -222,7 +227,9 @@ class _UserFormPageState extends State<UserFormPage> {
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                        _obscurePassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                       ),
                       onPressed: () {
                         setState(() => _obscurePassword = !_obscurePassword);
@@ -251,10 +258,15 @@ class _UserFormPageState extends State<UserFormPage> {
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                        _obscureConfirmPassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                       ),
                       onPressed: () {
-                        setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
+                        setState(
+                          () => _obscureConfirmPassword =
+                              !_obscureConfirmPassword,
+                        );
                       },
                     ),
                     border: const OutlineInputBorder(),
@@ -350,20 +362,20 @@ class _UserFormPageState extends State<UserFormPage> {
                     ),
                     child: _isLoading
                         ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
                         : Text(
-                      isEditMode ? 'Update User' : 'Create User',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                            isEditMode ? 'Update User' : 'Create User',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 16),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lapangin/config/api_config.dart';
 import 'package:lapangin/screens/auth/register.dart';
 import 'package:lapangin/screens/menu.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
@@ -62,10 +63,10 @@ class _LoginPageState extends State<LoginPage> {
     String password = _passwordController.text;
 
     try {
-      final response = await request.login(
-        "https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/auth/login/",
-        {'username': username, 'password': password},
-      );
+      final response = await request.login(ApiConfig.loginUrl, {
+        'username': username,
+        'password': password,
+      });
 
       if (request.loggedIn) {
         String message = response['message'];

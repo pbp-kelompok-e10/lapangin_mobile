@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class ReviewCard extends StatelessWidget {
   final Map<String, dynamic> review;
   final bool isOwner;
+  final bool canDelete;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -10,6 +11,7 @@ class ReviewCard extends StatelessWidget {
     super.key,
     required this.review,
     required this.isOwner,
+    this.canDelete = false,
     required this.onEdit,
     required this.onDelete,
   });
@@ -30,10 +32,7 @@ class ReviewCard extends StatelessWidget {
       elevation: 4,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Colors.grey.shade300,
-          width: 1,
-        ),
+        side: BorderSide(color: Colors.grey.shade300, width: 1),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -43,10 +42,7 @@ class ReviewCard extends StatelessWidget {
             // Avatar + Username + Rating
             Row(
               children: [
-                const CircleAvatar(
-                  radius: 20,
-                  child: Icon(Icons.person),
-                ),
+                const CircleAvatar(radius: 20, child: Icon(Icons.person)),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -80,29 +76,27 @@ class ReviewCard extends StatelessWidget {
             // Comment
             Text(
               review["comment"] ?? "",
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14,
-              ),
+              style: const TextStyle(fontFamily: 'Poppins', fontSize: 14),
             ),
 
-            // Edit/Delete buttons jika owner
-            if (isOwner)
+            // Edit/Delete buttons jika owner atau admin
+            if (isOwner || canDelete)
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(
-                    onPressed: onEdit,
-                    child: const Text(
-                      "Edit",
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
-                        color: Colors.blue, // bisa diganti sesuai tema
+                  if (isOwner)
+                    TextButton(
+                      onPressed: onEdit,
+                      child: const Text(
+                        "Edit",
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                          color: Colors.blue,
+                        ),
                       ),
                     ),
-                  ),
                   TextButton(
                     onPressed: onDelete,
                     child: const Text(

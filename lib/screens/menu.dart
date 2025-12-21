@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:lapangin/config/api_config.dart';
 import 'package:lapangin/screens/auth/login.dart';
 import 'package:lapangin/screens/booking/booking_history_list.dart';
+import 'package:lapangin/screens/faq/faq_list.dart';
 import 'package:lapangin/screens/venue/venue_list.dart';
 import 'package:lapangin/widgets/utils/fast_navigation_card.dart';
 import 'package:lapangin/widgets/utils/promotion_banner.dart';
@@ -13,12 +15,9 @@ import 'dart:async';
 import 'package:lapangin/screens/venue/venue_detail.dart';
 import 'package:lapangin/screens/user_admin/user_list_page.dart';
 import 'package:lapangin/screens/user_admin/profile_page.dart';
-import 'package:lapangin/screens/faq/faq_list.dart';
 
 Future<List<VenueEntry>> fetchRecommendedVenues(CookieRequest request) async {
-  final response = await request.get(
-    'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/recommended',
-  );
+  final response = await request.get(ApiConfig.recommendedVenuesUrl);
 
   if (response is Map<String, dynamic>) {
     if (response.containsKey('success') && response['success'] == false) {
@@ -74,9 +73,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _handleSignOut(BuildContext context) async {
     final request = context.read<CookieRequest>();
     try {
-      final response = await request.logout(
-        "https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/auth/logout/",
-      );
+      final response = await request.logout(ApiConfig.logoutUrl);
       String message = response["message"];
 
       if (!context.mounted) return;
@@ -207,9 +204,7 @@ class _MyHomePageState extends State<MyHomePage> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const UserListPage(),
-            ),
+            MaterialPageRoute(builder: (context) => const UserListPage()),
           );
         },
         icon: const Icon(Icons.people),
@@ -228,8 +223,10 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  Future<List<VenueEntry>>? _recommendedVenuesFuture;
+  List<VenueEntry>? _recommendedVenues;
+  bool _isLoading = true;
   bool _noConnection = false;
+  String? _error;
 
   @override
   void initState() {
@@ -237,25 +234,42 @@ class _HomePageState extends State<HomePage> {
     _loadRecommendedVenues();
   }
 
-  void _loadRecommendedVenues() {
-    final request = context.read<CookieRequest>();
+  Future<void> _loadRecommendedVenues() async {
     setState(() {
+      _isLoading = true;
       _noConnection = false;
-      _recommendedVenuesFuture = fetchRecommendedVenues(request).catchError((
-        e,
-      ) {
+      _error = null;
+    });
+
+    try {
+      final request = context.read<CookieRequest>();
+      final venues = await fetchRecommendedVenues(request);
+      if (mounted) {
+        setState(() {
+          _recommendedVenues = venues;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
         final errorString = e.toString().toLowerCase();
         if (errorString.contains('socketexception') ||
             errorString.contains('handshakeexception') ||
             errorString.contains('connection') ||
-            errorString.contains('failed host lookup')) {
+            errorString.contains('failed host lookup') ||
+            errorString.contains('network')) {
           setState(() {
             _noConnection = true;
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _error = e.toString();
+            _isLoading = false;
           });
         }
-        throw e;
-      });
-    });
+      }
+    }
   }
 
   void _navigateToVenueList() {
@@ -268,68 +282,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // No internet connection state
-    if (_noConnection) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.wifi_off_rounded,
-                size: 80,
-                color: Colors.grey.shade400,
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Tidak Ada Koneksi Internet',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Poppins',
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Periksa koneksi internet Anda dan coba lagi.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade600,
-                  fontFamily: 'Poppins',
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: _loadRecommendedVenues,
-                icon: const Icon(Icons.refresh),
-                label: const Text(
-                  'Coba Lagi',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0062FF),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Column(
@@ -406,75 +358,136 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 16.0),
 
           // LIST REKOMENDASI
-          FutureBuilder<List<VenueEntry>>(
-            future: _recommendedVenuesFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
-              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(
-                  child: Text('Tidak ada venue yang direkomendasikan.'),
-                );
-              } else {
-                final venues = snapshot.data!;
-
-                return Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  VenueDetailPage(venueId: venues[0].id),
-                            ),
-                          );
-                        },
-                        child: VenueCard(
-                          location: venues[0].city,
-                          name: venues[0].name,
-                          rating: venues[0].rating,
-                          price: venues[0].price,
-                          imageUrl: venues[0].thumbnail,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16.0),
-                    if (venues.length > 1)
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    VenueDetailPage(venueId: venues[1].id),
-                              ),
-                            );
-                          },
-                          child: VenueCard(
-                            location: venues[1].city,
-                            name: venues[1].name,
-                            rating: venues[1].rating,
-                            price: venues[1].price,
-                            imageUrl: venues[1].thumbnail,
-                          ),
-                        ),
-                      )
-                    else
-                      const Expanded(child: SizedBox.shrink()),
-                  ],
-                );
-              }
-            },
-          ),
+          _buildRecommendedVenuesList(),
 
           const SizedBox(height: 24.0),
         ],
       ),
+    );
+  }
+
+  Widget _buildRecommendedVenuesList() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_noConnection) {
+      return Container(
+        padding: const EdgeInsets.all(24.0),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey.shade400),
+            const SizedBox(height: 12),
+            const Text(
+              'Tidak Ada Koneksi Internet',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Poppins',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tidak dapat memuat rekomendasi venue',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+                fontFamily: 'Poppins',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _loadRecommendedVenues,
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text(
+                'Coba Lagi',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0062FF),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Center(child: Text('Error: $_error'));
+    }
+
+    if (_recommendedVenues == null || _recommendedVenues!.isEmpty) {
+      return const Center(
+        child: Text('Tidak ada venue yang direkomendasikan.'),
+      );
+    }
+
+    final venues = _recommendedVenues!;
+
+    return Row(
+      children: [
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => VenueDetailPage(venueId: venues[0].id),
+                ),
+              );
+            },
+            child: VenueCard(
+              location: venues[0].city,
+              name: venues[0].name,
+              rating: venues[0].rating,
+              price: venues[0].price,
+              imageUrl: venues[0].thumbnail,
+            ),
+          ),
+        ),
+        const SizedBox(width: 16.0),
+        if (venues.length > 1)
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        VenueDetailPage(venueId: venues[1].id),
+                  ),
+                );
+              },
+              child: VenueCard(
+                location: venues[1].city,
+                name: venues[1].name,
+                rating: venues[1].rating,
+                price: venues[1].price,
+                imageUrl: venues[1].thumbnail,
+              ),
+            ),
+          )
+        else
+          const Expanded(child: SizedBox.shrink()),
+      ],
     );
   }
 }
@@ -495,9 +508,7 @@ class SignOutPlaceholder extends StatelessWidget {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const UserListPage(),
-            ),
+            MaterialPageRoute(builder: (context) => const UserListPage()),
           );
         },
         icon: const Icon(Icons.people),

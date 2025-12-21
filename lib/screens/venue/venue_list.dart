@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:lapangin/config/api_config.dart';
 import 'package:lapangin/models/venue_entry.dart';
 import 'package:lapangin/screens/venue/edit_venue_form.dart';
-import 'package:lapangin/screens/booking/create_booking_page.dart';
 import 'package:lapangin/widgets/venue/venue_list_card.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
@@ -9,9 +9,7 @@ import 'package:lapangin/screens/venue/venue_detail.dart';
 import 'package:lapangin/screens/venue/create_venue_form.dart';
 
 Future<List<VenueEntry>> fetchAllVenues(CookieRequest request) async {
-  final response = await request.get(
-    'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/venues',
-  );
+  final response = await request.get(ApiConfig.venuesUrl);
 
   if (response is Map<String, dynamic>) {
     // Cek apakah ada error
@@ -80,13 +78,52 @@ class _VenuesPageState extends State<VenuesPage> {
 
   bool _canCreateVenue = false;
 
-  final GlobalKey<State<FutureBuilder<List<VenueEntry>>>> _futureBuilderKey =
-      GlobalKey();
+  // State untuk venue list
+  List<VenueEntry>? _venues;
+  bool _isLoading = true;
+  bool _noConnection = false;
+  String? _error;
 
   void _refreshVenueList() {
+    _loadVenues();
+  }
+
+  Future<void> _loadVenues() async {
     setState(() {
-      _futureBuilderKey.currentState?.setState(() {});
+      _isLoading = true;
+      _noConnection = false;
+      _error = null;
     });
+
+    try {
+      final request = context.read<CookieRequest>();
+      final venues = await fetchAllVenues(request);
+      if (mounted) {
+        setState(() {
+          _venues = venues;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        final errorString = e.toString().toLowerCase();
+        if (errorString.contains('socketexception') ||
+            errorString.contains('handshakeexception') ||
+            errorString.contains('connection') ||
+            errorString.contains('failed host lookup') ||
+            errorString.contains('network')) {
+          setState(() {
+            _noConnection = true;
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _error = e.toString();
+            _isLoading = false;
+          });
+        }
+      }
+    }
   }
 
   void _navigateToCreateVenue() {
@@ -151,13 +188,14 @@ class _VenuesPageState extends State<VenuesPage> {
 
   Future<void> _deleteVenueApi(VenueEntry venue) async {
     final request = context.read<CookieRequest>();
-    final url =
-        'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/delete/${venue.id}/';
+    final url = ApiConfig.deleteVenueUrl(venue.id);
 
     try {
       final response = await request.post(url, {});
 
-      if (response is Map<String, dynamic> && response['success'] == true) {
+      if (response is Map<String, dynamic> &&
+          (response['success'] == true || response['status'] == 'success')) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(response['message'] ?? 'Venue berhasil dihapus.'),
@@ -166,6 +204,7 @@ class _VenuesPageState extends State<VenuesPage> {
         );
         _refreshVenueList();
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(response['message'] ?? 'Gagal menghapus venue.'),
@@ -174,6 +213,7 @@ class _VenuesPageState extends State<VenuesPage> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       // Error koneksi
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -194,6 +234,7 @@ class _VenuesPageState extends State<VenuesPage> {
   void initState() {
     super.initState();
     _fetchPermissionStatus();
+    _loadVenues();
 
     searchQuery = widget.initialQuery ?? '';
     _searchController = TextEditingController(text: searchQuery);
@@ -218,8 +259,7 @@ class _VenuesPageState extends State<VenuesPage> {
 
   Future<void> _fetchPermissionStatus() async {
     final request = context.read<CookieRequest>();
-    const url =
-        'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/permission/create/';
+    final url = ApiConfig.createPermissionUrl;
 
     try {
       final response = await request.get(url);
@@ -239,8 +279,6 @@ class _VenuesPageState extends State<VenuesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final request = context.watch<CookieRequest>();
-
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 36),
@@ -353,7 +391,10 @@ class _VenuesPageState extends State<VenuesPage> {
                 children: [
                   // 1. DROPDOWN
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 16,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       border: Border.all(color: Colors.grey.shade300),
@@ -415,10 +456,7 @@ class _VenuesPageState extends State<VenuesPage> {
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         visualDensity: VisualDensity.compact,
 
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 16,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
 
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -432,129 +470,180 @@ class _VenuesPageState extends State<VenuesPage> {
             const SizedBox(height: 4),
 
             // VENUE LIST
-            FutureBuilder<List<VenueEntry>>(
-              future: fetchAllVenues(request),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(0),
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                } else if (snapshot.hasError) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(0),
-                      child: Text('Error: ${snapshot.error}'),
-                    ),
-                  );
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(0),
-                      child: Text('Tidak ada venue tersedia.'),
-                    ),
-                  );
-                } else {
-                  List<VenueEntry> venues = snapshot.data!;
-
-                  // Filter by location (skip jika "Semua Lokasi")
-                  if (selectedLocation != 'Semua Lokasi') {
-                    venues = venues.where((venue) {
-                      return venue.city.toLowerCase().contains(
-                        selectedLocation.toLowerCase().replaceAll('kota ', ''),
-                      );
-                    }).toList();
-                  }
-
-                  // Filter by search query
-                  if (searchQuery.isNotEmpty) {
-                    venues = venues.where((venue) {
-                      return venue.name.toLowerCase().contains(
-                        searchQuery.toLowerCase(),
-                      );
-                    }).toList();
-                  }
-
-                  // Sort venues
-                  if (sortBy == 'Harga Terendah') {
-                    venues.sort((a, b) => a.price.compareTo(b.price));
-                  } else if (sortBy == 'Harga Tertinggi') {
-                    venues.sort((a, b) => b.price.compareTo(a.price));
-                  } else if (sortBy == 'Rating Tertinggi') {
-                    venues.sort((a, b) => b.rating.compareTo(a.rating));
-                  } else if (sortBy == 'Rating Terendah') {
-                    venues.sort((a, b) => a.rating.compareTo(b.rating));
-                  } else if (sortBy == 'Kapasitas Terendah') {
-                    venues.sort((a, b) => a.capacity.compareTo(b.capacity));
-                  } else if (sortBy == 'Kapasitas Tertinggi') {
-                    venues.sort((a, b) => b.capacity.compareTo(b.capacity));
-                  }
-
-                  if (venues.isEmpty) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(0),
-                        child: Text(
-                          'Tidak ada venue yang sesuai dengan filter.',
-                          style: TextStyle(fontFamily: 'Poppins'),
-                        ),
-                      ),
-                    );
-                  }
-
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: venues.length,
-                    itemBuilder: (context, index) {
-                      final venue = venues[index];
-                      return Column(
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      VenueDetailPage(venueId: venue.id),
-                                ),
-                              );
-                            },
-                            child: VenueListCard(
-                              venue: venue,
-                              canManage: _canCreateVenue,
-                              onEdit: () => _navigateToEditVenue(venue),
-                              onRemove: () => _removeVenue(venue),
-                            ),
-                          ),
-                          // Adding the "Sewa" button below the card
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
-                            child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          CreateBookingPage(venueId: venue.id)),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 44)),
-                              child: const Text('Sewa Sekarang', style: TextStyle(fontSize: 16)),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                }
-              },
-            ),
+            _buildVenueList(),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildVenueList() {
+    if (_isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_noConnection) {
+      return SizedBox(
+        height: MediaQuery.of(context).size.height * 0.5,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.wifi_off_rounded,
+                size: 64,
+                color: Colors.grey.shade400,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Tidak Ada Koneksi Internet',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Poppins',
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Tidak dapat memuat daftar venue',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                  fontFamily: 'Poppins',
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              OutlinedButton.icon(
+                onPressed: _loadVenues,
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text(
+                  'Coba Lagi',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF0062FF),
+                  side: const BorderSide(color: Color(0xFF0062FF)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text('Error: $_error'),
+        ),
+      );
+    }
+
+    if (_venues == null || _venues!.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text('Tidak ada venue tersedia.'),
+        ),
+      );
+    }
+
+    List<VenueEntry> venues = List.from(_venues!);
+
+    // Filter by location (skip jika "Semua Lokasi")
+    if (selectedLocation != 'Semua Lokasi') {
+      venues = venues.where((venue) {
+        return venue.city.toLowerCase().contains(
+          selectedLocation.toLowerCase().replaceAll('kota ', ''),
+        );
+      }).toList();
+    }
+
+    // Filter by search query
+    if (searchQuery.isNotEmpty) {
+      venues = venues.where((venue) {
+        return venue.name.toLowerCase().contains(searchQuery.toLowerCase());
+      }).toList();
+    }
+
+    // Sort venues
+    if (sortBy == 'Harga Terendah') {
+      venues.sort((a, b) => a.price.compareTo(b.price));
+    } else if (sortBy == 'Harga Tertinggi') {
+      venues.sort((a, b) => b.price.compareTo(a.price));
+    } else if (sortBy == 'Rating Tertinggi') {
+      venues.sort((a, b) => b.rating.compareTo(a.rating));
+    } else if (sortBy == 'Rating Terendah') {
+      venues.sort((a, b) => a.rating.compareTo(b.rating));
+    } else if (sortBy == 'Kapasitas Terendah') {
+      venues.sort((a, b) => a.capacity.compareTo(b.capacity));
+    } else if (sortBy == 'Kapasitas Tertinggi') {
+      venues.sort((a, b) => b.capacity.compareTo(a.capacity));
+    }
+
+    if (venues.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'Tidak ada venue yang sesuai dengan filter.',
+            style: TextStyle(fontFamily: 'Poppins'),
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: venues.length,
+      itemBuilder: (context, index) {
+        final venue = venues[index];
+        return Column(
+          children: [
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => VenueDetailPage(venueId: venue.id),
+                  ),
+                ).then((result) {
+                  // Refresh venue list to update rating if review was added/edited/deleted
+                  if (result == true) {
+                    _refreshVenueList();
+                  }
+                });
+              },
+              child: VenueListCard(
+                venue: venue,
+                canManage: _canCreateVenue,
+                onEdit: () => _navigateToEditVenue(venue),
+                onRemove: () => _removeVenue(venue),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

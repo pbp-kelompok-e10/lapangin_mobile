@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lapangin/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lapangin/models/faq/faq_entry.dart';
@@ -31,9 +32,7 @@ class _FaqListPageState extends State<FaqListPage> {
   }
 
   Future<List<FaqEntry>> fetchFaq(CookieRequest request) async {
-    const String baseUrl =
-        'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id'; //Chrome
-    // const String baseUrl = 'http://10.0.2.2:8000'; //Emulator
+    final String baseUrl = ApiConfig.baseUrl;
 
     String categoryCode = categories.firstWhere(
       (cat) => cat['name'] == selectedCategory,
@@ -56,8 +55,7 @@ class _FaqListPageState extends State<FaqListPage> {
   }
 
   Future<void> deleteFaq(CookieRequest request, String faqId) async {
-    const String baseUrl =
-        'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id';
+    final String baseUrl = ApiConfig.baseUrl;
 
     final response = await request.post(
       '$baseUrl/faq/delete-flutter/$faqId/',
@@ -72,7 +70,7 @@ class _FaqListPageState extends State<FaqListPage> {
             backgroundColor: Colors.green,
           ),
         );
-        setState(() {}); 
+        setState(() {});
       }
     }
   }

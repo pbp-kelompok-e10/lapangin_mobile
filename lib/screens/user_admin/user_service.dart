@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:lapangin/screens/user_admin/user.dart';
+import 'package:lapangin/config/api_config.dart';
 
 class UserService {
   // Changed: Use 10.0.2.2 for Android emulator and removed trailing slash
-  static const String baseUrl = 'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id';
+  static const String baseUrl =
+      'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id';
 
   final CookieRequest request;
 
@@ -17,15 +19,11 @@ class UserService {
     int page = 1,
   }) async {
     try {
-      String url = '$baseUrl/user/api/list/?page=$page';
-
-      if (search != null && search.isNotEmpty) {
-        url += '&search=$search';
-      }
-
-      if (status != null && status.isNotEmpty) {
-        url += '&status=$status';
-      }
+      String url = ApiConfig.userListUrl(
+        search: search,
+        status: status,
+        page: page,
+      );
 
       print('Fetching users from: $url');
 
@@ -57,7 +55,7 @@ class UserService {
   /// fetch user detail by id
   Future<User?> getUserDetail(int userId) async {
     try {
-      final response = await request.get('$baseUrl/user/detail/$userId/');
+      final response = await request.get(ApiConfig.userDetailUrl(userId));
 
       if (response != null) {
         return User.fromJson(response);
@@ -83,7 +81,7 @@ class UserService {
   }) async {
     try {
       final response = await request.postJson(
-        '$baseUrl/user/create/',
+        ApiConfig.createUserUrl,
         jsonEncode({
           'username': username,
           'password': password,
@@ -99,10 +97,7 @@ class UserService {
       return response;
     } catch (e) {
       print('Error creating user: $e');
-      return {
-        'status': 'error',
-        'message': 'Failed to create user: $e'
-      };
+      return {'status': 'error', 'message': 'Failed to create user: $e'};
     }
   }
 
@@ -133,17 +128,14 @@ class UserService {
       if (isActive != null) data['is_active'] = isActive;
 
       final response = await request.postJson(
-        '$baseUrl/user/edit/$userId/',
+        ApiConfig.editUserUrl(userId),
         jsonEncode(data),
       );
 
       return response;
     } catch (e) {
       print('Error updating user: $e');
-      return {
-        'status': 'error',
-        'message': 'Failed to update user: $e'
-      };
+      return {'status': 'error', 'message': 'Failed to update user: $e'};
     }
   }
 
@@ -151,35 +143,26 @@ class UserService {
   Future<Map<String, dynamic>> toggleUserStatus(int userId) async {
     try {
       final response = await request.post(
-        '$baseUrl/user/toggle-status/$userId/',
+        ApiConfig.toggleUserStatusUrl(userId),
         {},
       );
 
       return response;
     } catch (e) {
       print('Error toggling user status: $e');
-      return {
-        'status': 'error',
-        'message': 'Failed to toggle user status: $e'
-      };
+      return {'status': 'error', 'message': 'Failed to toggle user status: $e'};
     }
   }
 
   /// Delete user
   Future<Map<String, dynamic>> deleteUser(int userId) async {
     try {
-      final response = await request.post(
-        '$baseUrl/user/delete/$userId/',
-        {},
-      );
+      final response = await request.post(ApiConfig.deleteUserUrl(userId), {});
 
       return response;
     } catch (e) {
       print('Error deleting user: $e');
-      return {
-        'status': 'error',
-        'message': 'Failed to delete user: $e'
-      };
+      return {'status': 'error', 'message': 'Failed to delete user: $e'};
     }
   }
 }
