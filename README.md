@@ -1,9 +1,9 @@
 # lapangin
 
-[![Build Status](https://app.bitrise.io/app/05284808-ea5e-4425-8dc4-3de2310230a8/status.svg?token=F4QykT0EYK4SL1MGYWdW2g&branch=master)](https://app.bitrise.io/app/05284808-ea5e-4425-8dc4-3de2310230a8)
+[![Build Status](https://app.bitrise.io/app/c26a0056-feb8-413f-9d29-ef7254587bca/status.svg?token=un6Aut_N9PBWcWb8qg3BiQ&branch=master)](https://app.bitrise.io/app/c26a0056-feb8-413f-9d29-ef7254587bca)
 
 ## Download
-Download aplikasi versi terbaru: [Download APK](https://app.bitrise.io/app/05284808-ea5e-4425-8dc4-3de2310230a8/installable-artifacts/0b09e42451ec5676/public-install-page/7dd5878803b1454194033d59742b6e00)
+Download aplikasi versi terbaru: [Download APK](https://app.bitrise.io/app/c26a0056-feb8-413f-9d29-ef7254587bca/installable-artifacts/f74cbc1347c8de73/public-install-page/425936d7c83b3b247901dd47e19a6cb2)
 
 # TUGAS KELOMPOK PBP E
 
