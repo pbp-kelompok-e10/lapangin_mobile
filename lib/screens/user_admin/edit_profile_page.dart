@@ -14,6 +14,9 @@ class EditProfilePage extends StatefulWidget {
 class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
 
+  // CHANGED: Use production URL
+  static const String baseUrl = 'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id';
+
   late TextEditingController _fullNameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
@@ -59,7 +62,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       final request = context.read<CookieRequest>();
 
       final response = await request.post(
-        'http://10.0.2.2:8000/auth/update-profile/',
+        '$baseUrl/user/api/update-profile/',
         {
           'full_name': _fullNameController.text,
           'email': _emailController.text,
@@ -68,7 +71,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         },
       );
 
-      print('📤 Update Profile Response: $response'); // Debug log
+      print('📤 Update Profile Response: $response');
 
       setState(() => _isLoading = false);
 
@@ -82,7 +85,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ),
         );
 
-        Navigator.pop(context, true); // Return with success flag
+        Navigator.pop(context, true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -121,7 +124,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Profile Avatar
                 Center(
                   child: Column(
                     children: [
@@ -151,7 +153,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                 const SizedBox(height: 32),
 
-                // Personal Information Section
                 const Text(
                   'Personal Information',
                   style: TextStyle(
@@ -161,7 +162,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
                 const SizedBox(height: 16),
 
-                // Full Name
                 TextFormField(
                   controller: _fullNameController,
                   decoration: const InputDecoration(
@@ -178,7 +178,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
                 const SizedBox(height: 16),
 
-                // Email
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -199,7 +198,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
                 const SizedBox(height: 16),
 
-                // Phone
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
@@ -211,7 +209,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
                 const SizedBox(height: 16),
 
-                // Address
                 TextFormField(
                   controller: _addressController,
                   maxLines: 3,
@@ -225,7 +222,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                 const SizedBox(height: 32),
 
-                // Save Button
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -259,7 +255,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                 const SizedBox(height: 16),
 
-                // Cancel Button
                 SizedBox(
                   width: double.infinity,
                   height: 50,

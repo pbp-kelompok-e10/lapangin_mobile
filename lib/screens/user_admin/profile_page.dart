@@ -32,8 +32,8 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       final request = context.read<CookieRequest>();
 
-      // IMPORTANT: Use the correct URL format
-      final response = await request.get('http://10.0.2.2:8000/auth/profile/');
+      const String baseUrl = 'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id';
+      final response = await request.get('$baseUrl/user/api/profile/');
 
       print('📥 Profile API Response: $response'); // Debug log
 
@@ -103,7 +103,10 @@ class _ProfilePageState extends State<ProfilePage> {
     final request = context.read<CookieRequest>();
 
     try {
-      final response = await request.logout("http://10.0.2.2:8000/auth/logout/");
+      // CHANGED: Use correct logout endpoint
+      final response = await request.logout(
+        "https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/auth/logout/",
+      );
 
       if (!mounted) return;
 

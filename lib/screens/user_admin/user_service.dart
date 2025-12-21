@@ -3,8 +3,8 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:lapangin/screens/user_admin/user.dart';
 
 class UserService {
-
-  static const String baseUrl = 'http://127.0.0.1:8000/';
+  // Changed: Use 10.0.2.2 for Android emulator and removed trailing slash
+  static const String baseUrl = 'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id';
 
   final CookieRequest request;
 
