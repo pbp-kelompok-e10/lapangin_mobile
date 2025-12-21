@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lapangin/models/venue_entry.dart';
 import 'package:lapangin/screens/venue/edit_venue_form.dart';
+import 'package:lapangin/screens/booking/create_booking_page.dart';
 import 'package:lapangin/widgets/venue/venue_list_card.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
@@ -486,7 +487,7 @@ class _VenuesPageState extends State<VenuesPage> {
                   } else if (sortBy == 'Rating Terendah') {
                     venues.sort((a, b) => a.rating.compareTo(b.rating));
                   } else if (sortBy == 'Kapasitas Terendah') {
-                    venues.sort((a, b) => a.capacity.compareTo(b.price));
+                    venues.sort((a, b) => a.capacity.compareTo(b.capacity));
                   } else if (sortBy == 'Kapasitas Tertinggi') {
                     venues.sort((a, b) => b.capacity.compareTo(b.capacity));
                   }
@@ -509,22 +510,42 @@ class _VenuesPageState extends State<VenuesPage> {
                     itemCount: venues.length,
                     itemBuilder: (context, index) {
                       final venue = venues[index];
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  VenueDetailPage(venueId: venue.id),
+                      return Column(
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      VenueDetailPage(venueId: venue.id),
+                                ),
+                              );
+                            },
+                            child: VenueListCard(
+                              venue: venue,
+                              canManage: _canCreateVenue,
+                              onEdit: () => _navigateToEditVenue(venue),
+                              onRemove: () => _removeVenue(venue),
                             ),
-                          );
-                        },
-                        child: VenueListCard(
-                          venue: venue,
-                          canManage: _canCreateVenue,
-                          onEdit: () => _navigateToEditVenue(venue),
-                          onRemove: () => _removeVenue(venue),
-                        ),
+                          ),
+                          // Adding the "Sewa" button below the card
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          CreateBookingPage(venueId: venue.id)),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 44)),
+                              child: const Text('Sewa Sekarang', style: TextStyle(fontSize: 16)),
+                            ),
+                          ),
+                        ],
                       );
                     },
                   );
