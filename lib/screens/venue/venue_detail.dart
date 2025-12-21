@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:lapangin/config/api_config.dart';
 import 'package:provider/provider.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:lapangin/helper/price_formatter.dart';
@@ -9,9 +10,7 @@ Future<VenueEntry> fetchVenueDetail(
   CookieRequest request,
   String venueId,
 ) async {
-  final response = await request.get(
-    'https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/detail/$venueId/',
-  );
+  final response = await request.get(ApiConfig.venueDetailUrl(venueId));
 
   if (response is Map<String, dynamic> &&
       response.containsKey('success') &&
@@ -457,10 +456,206 @@ class VenueDetailBody extends StatelessWidget {
 }
 
 // Footer halaman detail (Harga dan Tombol Sewa)
-class VenueDetailFooter extends StatelessWidget {
+class VenueDetailFooter extends StatefulWidget {
   final VenueEntry venue;
 
   const VenueDetailFooter({super.key, required this.venue});
+
+  @override
+  State<VenueDetailFooter> createState() => _VenueDetailFooterState();
+}
+
+class _VenueDetailFooterState extends State<VenueDetailFooter> {
+  bool _isBooking = false;
+
+  Future<List<DateTime>> _fetchBookedDates() async {
+    try {
+      final request = context.read<CookieRequest>();
+      final response = await request.get(
+        ApiConfig.bookedDatesUrl(widget.venue.id),
+      );
+
+      if (response['status'] == true) {
+        final dates = response['data']['booked_dates'] as List;
+        return dates.map((d) => DateTime.parse(d)).toList();
+      }
+    } catch (e) {
+      // Return empty list if error
+    }
+    return [];
+  }
+
+  Future<void> _showBookingDialog() async {
+    // Fetch booked dates first
+    final bookedDates = await _fetchBookedDates();
+
+    if (!mounted) return;
+
+    final DateTime? selectedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      selectableDayPredicate: (DateTime date) {
+        // Can't select already booked dates
+        return !bookedDates.any(
+          (booked) =>
+              booked.year == date.year &&
+              booked.month == date.month &&
+              booked.day == date.day,
+        );
+      },
+      helpText: 'Pilih Tanggal Booking',
+      cancelText: 'Batal',
+      confirmText: 'Pilih',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF0062FF),
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (selectedDate == null || !mounted) return;
+
+    // Show confirmation dialog
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Konfirmasi Booking',
+          style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Venue: ${widget.venue.name}',
+              style: const TextStyle(fontFamily: 'Poppins', fontSize: 14),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tanggal: ${_formatDate(selectedDate)}',
+              style: const TextStyle(fontFamily: 'Poppins', fontSize: 14),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Harga: Rp${formatRupiah(widget.venue.price)}',
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0062FF),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal', style: TextStyle(fontFamily: 'Poppins')),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0062FF),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text(
+              'Konfirmasi',
+              style: TextStyle(fontFamily: 'Poppins'),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    // Submit booking
+    await _submitBooking(selectedDate);
+  }
+
+  Future<void> _submitBooking(DateTime date) async {
+    setState(() {
+      _isBooking = true;
+    });
+
+    try {
+      final request = context.read<CookieRequest>();
+      final response = await request.postJson(
+        ApiConfig.createBookingUrl,
+        jsonEncode({
+          'venue_id': widget.venue.id,
+          'booking_date': date.toIso8601String().split('T')[0],
+        }),
+      );
+
+      if (!mounted) return;
+
+      if (response['status'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Booking berhasil!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Gagal melakukan booking'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isBooking = false;
+        });
+      }
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
+    ];
+    const days = [
+      'Senin',
+      'Selasa',
+      'Rabu',
+      'Kamis',
+      'Jumat',
+      'Sabtu',
+      'Minggu',
+    ];
+    return '${days[date.weekday - 1]}, ${date.day} ${months[date.month - 1]} ${date.year}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -487,7 +682,7 @@ class VenueDetailFooter extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Rp${formatRupiah(venue.price)},-',
+                  'Rp${formatRupiah(widget.venue.price)},-',
                   style: const TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: 20,
@@ -508,11 +703,10 @@ class VenueDetailFooter extends StatelessWidget {
 
             // Tombol Sewa
             ElevatedButton(
-              onPressed: () {
-                // TODO: Logika booking/sewa akan diimplementasikan oleh pemilik modul booking
-              },
+              onPressed: _isBooking ? null : _showBookingDialog,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0062FF),
+                disabledBackgroundColor: Colors.grey,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 64,
                   vertical: 24,
@@ -521,15 +715,24 @@ class VenueDetailFooter extends StatelessWidget {
                   borderRadius: BorderRadius.circular(24),
                 ),
               ),
-              child: const Text(
-                'Sewa',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                ),
-              ),
+              child: _isBooking
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text(
+                      'Sewa',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
             ),
           ],
         ),

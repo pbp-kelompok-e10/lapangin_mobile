@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:lapangin/config/api_config.dart';
 import 'package:provider/provider.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 
@@ -36,7 +37,7 @@ class _CreateVenuePageState extends State<CreateVenuePage> {
 
       try {
         final response = await request.postJson(
-          "https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/create/",
+          ApiConfig.createVenueUrl,
           jsonEncode({
             'name': _name,
             'city': _city,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:lapangin/config/api_config.dart';
 import 'package:lapangin/models/venue_entry.dart';
 import 'package:provider/provider.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
@@ -75,8 +76,7 @@ class _EditVenuePageState extends State<EditVenuePage> {
 
       try {
         // Endpoint edit venue di Django
-        final url =
-            "https://angga-ziaurrohchman-lapangin.pbp.cs.ui.ac.id/venues/api/edit/${widget.venueId}";
+        final url = ApiConfig.editVenueUrl(widget.venueId);
 
         final response = await request.postJson(
           url,
