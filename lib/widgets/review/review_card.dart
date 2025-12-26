@@ -50,9 +50,10 @@ class ReviewCard extends StatelessWidget {
                     children: [
                       Text(
                         review["user_name"] ?? "-",
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Poppins',
+                          color: rating == 5 ? Colors.green : Colors.black,
                         ),
                       ),
                       const SizedBox(height: 4),
